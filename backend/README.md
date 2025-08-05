@@ -21,6 +21,106 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
+
+URL ngrok ngrok http --url=pleasant-vaguely-drum.ngrok-free.app 80
+
+
+
+---
+
+Voici un **guide clair, prêt à être copié/collé** dans ta documentation ou README pour l'installation et le lancement de Ngrok avec un domaine statique pour ton backend NestJS dans un environnement Flutter + Docker :
+
+---
+
+## 🚀 Guide d'installation & lancement de Ngrok avec domaine statique
+
+Ce guide te permet de rendre ton **backend accessible depuis un appareil externe** (mobile ou non connecté au réseau local), via une **URL publique statique Ngrok**.
+
+---
+
+### ✅ 1. Créer un compte Ngrok
+
+👉 [https://dashboard.ngrok.com/signup](https://dashboard.ngrok.com/signup)
+
+---
+
+### ✅ 2. Télécharger & installer Ngrok
+
+* Télécharge pour ton système : [https://ngrok.com/download](https://ngrok.com/download)
+* Décompresse puis place le binaire :
+
+  * **Linux/macOS** : `/usr/local/bin`
+  * **Windows** : `C:\ngrok\`
+
+---
+
+### ✅ 3. Configurer ton token
+
+Dans ton terminal :
+
+```bash
+ngrok config add-authtoken 30sGs1vLZzNmWq2Zz65gyBqNveL_2WX5u2ZHGwzzdFg2cdzo9
+```
+
+---
+
+### ✅ 4. Réserver un domaine statique
+
+* Va sur : [https://dashboard.ngrok.com/cloud-edge/domains](https://dashboard.ngrok.com/cloud-edge/domains)
+* Clique sur **"Reserve a Domain"**
+* Ex : `mon-backend.ngrok.app`
+
+---
+
+### ✅ 5. Lancer le tunnel Ngrok
+
+⚠️ **Lance d'abord ton backend (ex: NestJS sur le port 3000)**
+
+Puis dans ton terminal :
+
+```bash
+ngrok http --domain=pleasant-vaguely-drum.ngrok-free.app 3000
+```
+
+---
+
+### ✅ 6. Configurer l’app Flutter
+
+Dans tes services API Flutter :
+
+```dart
+const String baseUrl = 'https://pleasant-vaguely-drum.ngrok-free.app';
+```
+
+---
+
+### 📌 Recommandations
+
+* 🟢 Le **backend doit être lancé AVANT Ngrok**
+* 🛑 Ne change pas de port après avoir lié le domaine
+* 🔐 Pour un domaine **vraiment fixe**, prends un **plan payant** (sinon il peut expirer)
+* 🌐 Active les **CORS** dans NestJS si tu utilises Flutter Web
+
+---
+
+### ✅ Automatisation (optionnel)
+
+Crée un script shell (ex: `start_ngrok.sh`) :
+
+```bash
+#!/bin/bash
+
+# Lancer le backend
+npm run start &
+
+# Attendre que le backend soit prêt (adapter selon ton setup)
+sleep 5
+
+# Lancer ngrok
+ngrok http --domain=pleasant-vaguely-drum.ngrok-free.app 3000
+```
+
+
 ## Description
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
@@ -96,3 +196,258 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+# Backend Visio - API d'authentification
+
+## Configuration
+
+### Variables d'environnement
+
+Créez un fichier `.env` à la racine du projet backend avec les variables suivantes :
+
+```env
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=password
+DB_DATABASE=visio_db
+
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key-here
+JWT_REFRESH_SECRET=your-super-secret-refresh-key-here
+
+# Application Configuration
+PORT=3000
+NODE_ENV=development
+```
+
+## Installation
+
+```bash
+npm install
+```
+
+## Démarrage
+
+```bash
+# Développement
+npm run start:dev
+
+# Production
+npm run start:prod
+```
+
+## API d'authentification
+
+### Endpoints disponibles
+
+#### POST /auth/register
+Inscription d'un nouvel utilisateur
+
+**Body:**
+```json
+{
+  "fullName": "John Doe",
+  "email": "john@example.com",
+  "password": "password123",
+  "phoneNumber": "+33123456789"
+}
+```
+
+**Response:**
+```json
+{
+  "user": {
+    "id": "uuid",
+    "email": "john@example.com",
+    "fullName": "John Doe",
+    "phoneNumber": "+33123456789",
+    "isVerified": false
+  },
+  "accessToken": "jwt-token",
+  "refreshToken": "refresh-token"
+}
+```
+
+#### POST /auth/login
+Connexion d'un utilisateur
+
+**Body:**
+```json
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
+
+**Response:**
+```json
+{
+  "user": {
+    "id": "uuid",
+    "email": "john@example.com",
+    "fullName": "John Doe",
+    "phoneNumber": "+33123456789",
+    "isVerified": false
+  },
+  "accessToken": "jwt-token",
+  "refreshToken": "refresh-token"
+}
+```
+
+#### POST /auth/logout
+Déconnexion (nécessite un token JWT valide)
+
+**Headers:**
+```
+Authorization: Bearer <access-token>
+```
+
+**Response:**
+```json
+{
+  "message": "Déconnexion réussie"
+}
+```
+
+#### POST /auth/refresh
+Rafraîchissement du token d'accès
+
+**Body:**
+```json
+{
+  "refreshToken": "refresh-token"
+}
+```
+
+**Response:**
+```json
+{
+  "accessToken": "new-jwt-token",
+  "refreshToken": "new-refresh-token"
+}
+```
+
+#### GET /auth/profile
+Récupération du profil utilisateur (nécessite un token JWT valide)
+
+**Headers:**
+```
+Authorization: Bearer <access-token>
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "email": "john@example.com",
+  "fullName": "John Doe"
+}
+```
+
+## API de gestion des utilisateurs (Admin uniquement)
+
+### Endpoints disponibles
+
+#### GET /users
+Liste de tous les utilisateurs (nécessite le rôle admin)
+
+**Headers:**
+```
+Authorization: Bearer <access-token>
+```
+
+**Response:**
+```json
+[
+  {
+    "id": "uuid",
+    "fullName": "John Doe",
+    "email": "john@example.com",
+    "phoneNumber": "+33123456789",
+    "isVerified": true,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "roles": [
+      {
+        "id": 1,
+        "name": "user",
+        "description": "Utilisateur standard"
+      }
+    ]
+  }
+]
+```
+
+#### GET /users/:id
+Détails d'un utilisateur spécifique (nécessite le rôle admin)
+
+#### POST /users
+Créer un nouvel utilisateur (nécessite le rôle admin)
+
+**Body:**
+```json
+{
+  "fullName": "Jane Doe",
+  "email": "jane@example.com",
+  "password": "password123",
+  "phoneNumber": "+33123456789",
+  "isVerified": true,
+  "roleIds": [1, 2]
+}
+```
+
+#### PUT /users/:id
+Modifier un utilisateur (nécessite le rôle admin)
+
+**Body:**
+```json
+{
+  "fullName": "Jane Smith",
+  "isVerified": true,
+  "roleIds": [1]
+}
+```
+
+#### DELETE /users/:id
+Supprimer un utilisateur (nécessite le rôle admin)
+
+**Response:**
+```json
+{
+  "message": "Utilisateur supprimé avec succès"
+}
+```
+
+#### PUT /users/:id/roles
+Modifier les rôles d'un utilisateur (nécessite le rôle admin)
+
+**Body:**
+```json
+{
+  "roleIds": [1, 3]
+}
+```
+
+## Initialisation
+
+### Créer les rôles et l'utilisateur admin
+
+```bash
+npm run init:roles
+```
+
+Cela créera :
+- Rôle `admin` : Administrateur avec tous les droits
+- Rôle `user` : Utilisateur standard
+- Rôle `seller` : Vendeur de produits
+- Utilisateur admin : `admin@visio.com` / `admin123`
+
+## Sécurité
+
+- Les mots de passe sont hashés avec bcrypt (12 rounds)
+- Les tokens JWT ont une durée de vie de 15 minutes pour l'access token
+- Les refresh tokens ont une durée de vie de 7 jours
+- Les tokens sont stockés en base de données pour permettre la révocation
+- Validation des données avec class-validator
+- Protection par rôles pour les endpoints sensibles
