@@ -24,6 +24,10 @@ export declare class AuthController {
             fullName: string;
             phoneNumber: string;
             isVerified: boolean;
+            createdAt: Date;
+            lastLogin: Date;
+            active: true;
+            online: boolean;
         };
     }>;
     logout(user: any): Promise<{

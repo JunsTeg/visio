@@ -9,7 +9,7 @@ class AppConfig {
   static const Map<Environment, Map<String, dynamic>> _configs = {
     Environment.development: {
       'apiBaseUrl':
-          'http://10.0.2.2:3000', // IP de l'hôte pour l'émulateur Android
+          'https://pleasant-vaguely-drum.ngrok-free.app', // IP de l'hôte pour l'émulateur Android
       'apiTimeout': 30000,
       'enableLogging': true,
       'enableAnalytics': false,

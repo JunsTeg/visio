@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User, Role } from '../entities';
-import { CreateUserDto, UpdateUserDto } from './dto';
+import { CreateUserDto, UpdateUserDto, UpdateProfileDto } from './dto';
 
 @Injectable()
 export class UsersService {
@@ -14,18 +14,36 @@ export class UsersService {
     private roleRepository: Repository<Role>,
   ) {}
 
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find({
-      relations: ['roles'],
-      select: ['id', 'fullName', 'email', 'phoneNumber', 'isVerified', 'createdAt'],
-    });
+  async findAll({ page = 1, limit = 20, search, role, active, online }: any): Promise<{ data: User[]; total: number; page: number; limit: number }> {
+    const query = this.userRepository.createQueryBuilder('user')
+      .leftJoinAndSelect('user.roles', 'role');
+
+    if (search) {
+      query.andWhere('user.fullName ILIKE :search OR user.email ILIKE :search', { search: `%${search}%` });
+    }
+    if (role) {
+      query.andWhere('role.name = :role', { role });
+    }
+    if (active !== undefined) {
+      query.andWhere('user.active = :active', { active: active === 'true' });
+    }
+    if (online !== undefined) {
+      query.andWhere('user.online = :online', { online: online === 'true' });
+    }
+
+    const [data, total] = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total, page: Number(page), limit: Number(limit) };
   }
 
   async findOne(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
       relations: ['roles'],
-      select: ['id', 'fullName', 'email', 'phoneNumber', 'isVerified', 'createdAt'],
+      select: ['id', 'fullName', 'email', 'phoneNumber', 'isVerified', 'createdAt', 'lastLogin', 'active', 'online'],
     });
 
     if (!user) {
@@ -132,9 +150,22 @@ export class UsersService {
       throw new NotFoundException('Utilisateur non trouvé');
     }
 
-    await this.userRepository.remove(user);
+    user.active = false;
+    user.online = false;
+    await this.userRepository.save(user);
 
-    return { message: 'Utilisateur supprimé avec succès' };
+    return { message: 'Utilisateur désactivé avec succès' };
+  }
+
+  async activate(id: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+    user.active = true;
+    user.online = false;
+    await this.userRepository.save(user);
+    return { message: 'Utilisateur réactivé avec succès' };
   }
 
   async updateRoles(id: string, roleIds: number[]): Promise<User> {
@@ -155,5 +186,39 @@ export class UsersService {
     await this.userRepository.save(user);
 
     return this.findOne(id);
+  }
+
+  async getMe(userId: string): Promise<User> {
+    return this.findOne(userId);
+  }
+
+  async updateMe(userId: string, updateProfileDto: UpdateProfileDto): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['roles'],
+    });
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+    const { email, password, fullName, phoneNumber } = updateProfileDto;
+    if (email && email !== user.email) {
+      const existingUser = await this.userRepository.findOne({ where: { email } });
+      if (existingUser) {
+        throw new ConflictException('Un utilisateur avec cet email existe déjà');
+      }
+      user.email = email;
+    }
+    if (fullName) user.fullName = fullName;
+    if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
+    if (password) {
+      const saltRounds = 12;
+      user.passwordHash = await bcrypt.hash(password, saltRounds);
+    }
+    await this.userRepository.save(user);
+    return this.findOne(userId);
+  }
+
+  async getRoles(): Promise<Role[]> {
+    return this.roleRepository.find();
   }
 } 

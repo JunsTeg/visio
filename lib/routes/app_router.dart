@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import '../screens/login_screen.dart';
 import '../screens/register_screen.dart';
 import '../utils/constants.dart';
+import '../screens/profile_screen.dart';
+import '../screens/users_list_screen.dart';
+import '../screens/user_detail_screen.dart';
+import '../screens/user_create_screen.dart';
+import '../screens/user_edit_screen.dart';
+import '../screens/roles_management_screen.dart';
+import '../widgets/admin_guard.dart';
 
 class AppRouter {
   static const String initialRoute = AppConstants.homeRoute;
@@ -17,6 +24,67 @@ class AppRouter {
       case AppConstants.registerRoute:
         return MaterialPageRoute(
           builder: (_) => const RegisterScreen(),
+          settings: settings,
+        );
+
+      case AppConstants.profileRoute:
+        return MaterialPageRoute(
+          builder: (_) => const ProfileScreen(),
+          settings: settings,
+        );
+      case AppConstants.usersListRoute:
+        return MaterialPageRoute(
+          builder:
+              (_) => const AdminGuard(
+                child: UsersListScreen(),
+                fallbackRoute: AppConstants.homeRoute,
+              ),
+          settings: settings,
+        );
+      case AppConstants.userDetailRoute:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final userId = args?['userId'] as String?;
+        if (userId == null) {
+          return _errorRoute(settings, 'ID utilisateur manquant');
+        }
+        return MaterialPageRoute(
+          builder:
+              (_) => AdminGuard(
+                child: UserDetailScreen(userId: userId),
+                fallbackRoute: AppConstants.homeRoute,
+              ),
+          settings: settings,
+        );
+      case AppConstants.userCreateRoute:
+        return MaterialPageRoute(
+          builder:
+              (_) => const AdminGuard(
+                child: UserCreateScreen(),
+                fallbackRoute: AppConstants.homeRoute,
+              ),
+          settings: settings,
+        );
+      case AppConstants.userEditRoute:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final userId = args?['userId'] as String?;
+        if (userId == null) {
+          return _errorRoute(settings, 'ID utilisateur manquant');
+        }
+        return MaterialPageRoute(
+          builder:
+              (_) => AdminGuard(
+                child: UserEditScreen(userId: userId),
+                fallbackRoute: AppConstants.homeRoute,
+              ),
+          settings: settings,
+        );
+      case AppConstants.rolesManagementRoute:
+        return MaterialPageRoute(
+          builder:
+              (_) => const AdminGuard(
+                child: RolesManagementScreen(),
+                fallbackRoute: AppConstants.homeRoute,
+              ),
           settings: settings,
         );
 
@@ -63,6 +131,35 @@ class AppRouter {
     }
   }
 
+  static Route<dynamic> _errorRoute(RouteSettings settings, String message) {
+    return MaterialPageRoute(
+      builder:
+          (context) => Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Erreur de navigation',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(message, style: Theme.of(context).textTheme.bodyMedium),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Retour'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      settings: settings,
+    );
+  }
+
   // Méthodes utilitaires pour la navigation
   static void navigateToLogin(BuildContext context) {
     Navigator.of(context).pushNamed(AppConstants.loginRoute);
@@ -94,5 +191,30 @@ class AppRouter {
     Navigator.of(
       context,
     ).pushNamedAndRemoveUntil(AppConstants.homeRoute, (route) => false);
+  }
+
+  // Navigation sécurisée pour les écrans admin
+  static void navigateToUsersList(BuildContext context) {
+    Navigator.of(context).pushNamed(AppConstants.usersListRoute);
+  }
+
+  static void navigateToUserDetail(BuildContext context, String userId) {
+    Navigator.of(
+      context,
+    ).pushNamed(AppConstants.userDetailRoute, arguments: {'userId': userId});
+  }
+
+  static void navigateToUserCreate(BuildContext context) {
+    Navigator.of(context).pushNamed(AppConstants.userCreateRoute);
+  }
+
+  static void navigateToUserEdit(BuildContext context, String userId) {
+    Navigator.of(
+      context,
+    ).pushNamed(AppConstants.userEditRoute, arguments: {'userId': userId});
+  }
+
+  static void navigateToRolesManagement(BuildContext context) {
+    Navigator.of(context).pushNamed(AppConstants.rolesManagementRoute);
   }
 }

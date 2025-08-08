@@ -103,7 +103,18 @@ export class AuthService {
       throw new UnauthorizedException('Email ou mot de passe incorrect');
     }
 
+    // Vérifier si le compte est actif
+    if (!user.active) {
+      this.logger.warn(`Tentative de connexion pour un compte désactivé: ${email}`);
+      throw new UnauthorizedException('Compte désactivé. Veuillez contacter le support.');
+    }
+
     this.logger.debug('Mot de passe validé avec succès');
+
+    // Mettre à jour lastLogin et online
+    user.lastLogin = new Date();
+    user.online = true;
+    await this.userRepository.save(user);
 
     // Générer les tokens
     this.logger.debug('Génération des tokens d\'authentification');
@@ -119,6 +130,10 @@ export class AuthService {
         fullName: user.fullName,
         phoneNumber: user.phoneNumber,
         isVerified: user.isVerified,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin,
+        active: user.active,
+        online: user.online,
       },
       ...tokens,
     };
@@ -126,12 +141,15 @@ export class AuthService {
 
   async logout(userId: string) {
     this.logger.log(`Tentative de déconnexion pour l'utilisateur ID: ${userId}`);
-    
+
+    // Mettre à jour online à false
+    await this.userRepository.update(userId, { online: false });
+
     // Supprimer tous les tokens de l'utilisateur
     this.logger.debug(`Suppression des tokens pour l'utilisateur ID: ${userId}`);
     const deleteResult = await this.authTokenRepository.delete({ userId });
     this.logger.debug(`Tokens supprimés: ${deleteResult.affected} tokens supprimés`);
-    
+
     this.logger.log(`Déconnexion réussie pour l'utilisateur ID: ${userId}`);
     return { message: 'Déconnexion réussie' };
   }
@@ -247,6 +265,7 @@ export class AuthService {
     
     const user = await this.userRepository.findOne({
       where: { id: userId },
+      relations: ['roles'],
     });
 
     if (user) {

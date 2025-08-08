@@ -15,7 +15,10 @@ CREATE TABLE users (
     password_hash TEXT NOT NULL,
     avatar_url TEXT,
     is_verified BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP,
+    active BOOLEAN DEFAULT TRUE,
+    online BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE user_roles (

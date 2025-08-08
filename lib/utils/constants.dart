@@ -16,7 +16,7 @@ class AppConstants {
       return 'https://pleasant-vaguely-drum.ngrok-free.app';
     } else if (Platform.isAndroid) {
       // Pour l'émulateur Android, utiliser l'IP de l'hôte
-      return 'http://10.0.2.2:3000';
+      return 'https://pleasant-vaguely-drum.ngrok-free.app';
     } else {
       // Pour iOS et autres plateformes
       return 'https://pleasant-vaguely-drum.ngrok-free.app';
@@ -58,6 +58,13 @@ class AppConstants {
   static const String registerRoute = '/register';
   static const String profileRoute = '/profile';
   static const String settingsRoute = '/settings';
+
+  // Routes admin
+  static const String usersListRoute = '/admin/users';
+  static const String userDetailRoute = '/admin/users/detail'; // + arguments
+  static const String userCreateRoute = '/admin/users/create';
+  static const String userEditRoute = '/admin/users/edit'; // + arguments
+  static const String rolesManagementRoute = '/admin/roles';
 
   // Storage keys
   static const String accessTokenKey = 'access_token';

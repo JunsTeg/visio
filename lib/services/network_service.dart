@@ -16,6 +16,9 @@ class NetworkService {
   // Gérer les erreurs HTTP
   static String handleHttpError(http.Response response) {
     switch (response.statusCode) {
+      case 200:
+      case 201:
+        return 'Succès'; // Codes de succès
       case 400:
         return 'Requête invalide';
       case 401:
@@ -39,7 +42,11 @@ class NetworkService {
       case 504:
         return 'Délai d\'attente dépassé';
       default:
-        return 'Erreur inconnue (${response.statusCode})';
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          return 'Succès'; // Codes de succès HTTP
+        } else {
+          return 'Erreur inconnue (${response.statusCode})';
+        }
     }
   }
 

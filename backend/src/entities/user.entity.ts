@@ -26,6 +26,15 @@ export class User {
   @Column({ name: 'is_verified', default: false })
   isVerified: boolean;
 
+  @Column({ name: 'last_login', type: 'timestamp', nullable: true })
+  lastLogin: Date;
+
+  @Column({ name: 'active', default: true })
+  active: boolean;
+
+  @Column({ name: 'online', default: false })
+  online: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

@@ -35,11 +35,32 @@ class AuthProvider with ChangeNotifier {
 
       if (isAuth) {
         final user = await _authService.getProfile();
+
+        // Vérifier si le compte est désactivé
+        if (user.active == false) {
+          _setError('Compte désactivé. Vous avez été déconnecté.');
+          _setUnauthenticated();
+          return;
+        }
+
         _setAuthenticated(user);
       } else {
         _setUnauthenticated();
       }
     } catch (e) {
+      final errorMessage = e.toString();
+
+      // Déconnexion automatique pour certaines erreurs
+      if (errorMessage.contains('Compte désactivé') ||
+          errorMessage.contains('401') ||
+          errorMessage.contains('403') ||
+          errorMessage.contains('Unauthorized') ||
+          errorMessage.contains('Forbidden')) {
+        _setError('Accès refusé. Vous avez été déconnecté.');
+        _setUnauthenticated();
+        return;
+      }
+
       _setError('Erreur lors de l\'initialisation: $e');
     } finally {
       _setLoading(false);
@@ -125,10 +146,68 @@ class AuthProvider with ChangeNotifier {
     try {
       if (_user != null) {
         final updatedUser = await _authService.getProfile();
+
+        // Vérifier si le compte est désactivé
+        if (updatedUser.active == false) {
+          _setError('Compte désactivé. Vous avez été déconnecté.');
+          _setUnauthenticated();
+          return;
+        }
+
         _setAuthenticated(updatedUser);
       }
     } catch (e) {
+      final errorMessage = e.toString();
+
+      // Déconnexion automatique pour certaines erreurs
+      if (errorMessage.contains('Compte désactivé') ||
+          errorMessage.contains('401') ||
+          errorMessage.contains('403') ||
+          errorMessage.contains('Unauthorized') ||
+          errorMessage.contains('Forbidden')) {
+        _setError('Accès refusé. Vous avez été déconnecté.');
+        _setUnauthenticated();
+        return;
+      }
+
       _setError('Erreur de mise à jour du profil: $e');
+    }
+  }
+
+  // Mise à jour du profil utilisateur (PUT /users/me)
+  Future<bool> updateProfileMe(Map<String, dynamic> data) async {
+    try {
+      _setLoading(true);
+      _clearError();
+      final updatedUser = await _authService.updateProfileMe(data);
+
+      // Vérifier si le compte est désactivé
+      if (updatedUser.active == false) {
+        _setError('Compte désactivé. Vous avez été déconnecté.');
+        _setUnauthenticated();
+        return false;
+      }
+
+      _setAuthenticated(updatedUser);
+      return true;
+    } catch (e) {
+      final errorMessage = e.toString();
+
+      // Déconnexion automatique pour certaines erreurs
+      if (errorMessage.contains('Compte désactivé') ||
+          errorMessage.contains('401') ||
+          errorMessage.contains('403') ||
+          errorMessage.contains('Unauthorized') ||
+          errorMessage.contains('Forbidden')) {
+        _setError('Accès refusé. Vous avez été déconnecté.');
+        _setUnauthenticated();
+        return false;
+      }
+
+      _setError('Erreur de mise à jour du profil: $e');
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 

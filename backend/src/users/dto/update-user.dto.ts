@@ -27,4 +27,24 @@ export class UpdateUserDto {
   @IsArray()
   @IsNumber({}, { each: true })
   roleIds?: number[];
+}
+
+export class UpdateProfileDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  fullName?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  password?: string;
+
+  @IsOptional()
+  @IsPhoneNumber()
+  phoneNumber?: string;
 } 

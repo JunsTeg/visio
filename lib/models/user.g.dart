@@ -12,7 +12,16 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
   email: json['email'] as String,
   phoneNumber: json['phoneNumber'] as String?,
   isVerified: json['isVerified'] as bool,
-  createdAt: DateTime.parse(json['createdAt'] as String),
+  createdAt:
+      json['createdAt'] == null
+          ? null
+          : DateTime.parse(json['createdAt'] as String),
+  lastLogin:
+      json['lastLogin'] == null
+          ? null
+          : DateTime.parse(json['lastLogin'] as String),
+  active: json['active'] as bool?,
+  online: json['online'] as bool?,
   roles:
       (json['roles'] as List<dynamic>?)
           ?.map((e) => Role.fromJson(e as Map<String, dynamic>))
@@ -25,7 +34,10 @@ Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
   'email': instance.email,
   'phoneNumber': instance.phoneNumber,
   'isVerified': instance.isVerified,
-  'createdAt': instance.createdAt.toIso8601String(),
+  'createdAt': instance.createdAt?.toIso8601String(),
+  'lastLogin': instance.lastLogin?.toIso8601String(),
+  'active': instance.active,
+  'online': instance.online,
   'roles': instance.roles,
 };
 

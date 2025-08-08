@@ -1,4 +1,4 @@
-<p align="center">
+     <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
@@ -22,13 +22,9 @@
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
 
-URL ngrok ngrok http --url=pleasant-vaguely-drum.ngrok-free.app 80
+URL ngrok ngrok http --url=pleasant-vaguely-drum.ngrok-free.app 3000
 
 
-
----
-
-Voici un **guide clair, prêt à être copié/collé** dans ta documentation ou README pour l'installation et le lancement de Ngrok avec un domaine statique pour ton backend NestJS dans un environnement Flutter + Docker :
 
 ---
 

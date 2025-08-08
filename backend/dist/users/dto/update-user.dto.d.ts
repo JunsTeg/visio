@@ -6,3 +6,9 @@ export declare class UpdateUserDto {
     isVerified?: boolean;
     roleIds?: number[];
 }
+export declare class UpdateProfileDto {
+    fullName?: string;
+    email?: string;
+    password?: string;
+    phoneNumber?: string;
+}

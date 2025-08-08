@@ -34,19 +34,32 @@ class AuthService {
             )
             .timeout(AppConstants.connectionTimeout);
 
-        if (response.statusCode == 200) {
-          final authResponse = AuthResponse.fromJson(jsonDecode(response.body));
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          print('DEBUG: Connexion réussie - Status: ${response.statusCode}');
+          print('DEBUG: Body: ${response.body}');
 
-          // Sauvegarder les tokens
-          await _apiClient.saveTokens(
-            authResponse.accessToken,
-            authResponse.refreshToken,
-          );
+          try {
+            final authResponse = AuthResponse.fromJson(
+              jsonDecode(response.body),
+            );
 
-          // Mettre en cache les données utilisateur
-          await CacheService.cacheUser(authResponse.user.toJson());
+            // Sauvegarder les tokens
+            await _apiClient.saveTokens(
+              authResponse.accessToken,
+              authResponse.refreshToken,
+            );
 
-          return authResponse;
+            // Mettre en cache les données utilisateur
+            await CacheService.cacheUser(authResponse.user.toJson());
+
+            return authResponse;
+          } catch (parseError) {
+            print('DEBUG: Erreur de parsing JSON: $parseError');
+            print('DEBUG: Body reçu: ${response.body}');
+            throw Exception(
+              'Erreur de parsing de la réponse du serveur: $parseError',
+            );
+          }
         } else {
           final errorMessage = NetworkService.handleHttpError(response);
           throw Exception(errorMessage);
@@ -180,6 +193,32 @@ class AuthService {
           // Mettre en cache les nouvelles données
           await CacheService.cacheUser(user.toJson());
 
+          return user;
+        } else {
+          final errorMessage = NetworkService.handleHttpError(response);
+          throw Exception(errorMessage);
+        }
+      } catch (e) {
+        if (e is Exception) rethrow;
+        throw Exception(NetworkService.handleNetworkException(e));
+      }
+    });
+  }
+
+  // Mettre à jour le profil utilisateur (PUT /users/me)
+  Future<User> updateProfileMe(Map<String, dynamic> data) async {
+    // Vérifier la connectivité réseau
+    if (!await NetworkService.isConnected()) {
+      throw Exception(AppConstants.networkErrorMessage);
+    }
+    return NetworkService.retryWithBackoff(() async {
+      try {
+        final response = await _apiClient
+            .put('/users/me', data)
+            .timeout(AppConstants.connectionTimeout);
+        if (response.statusCode == 200) {
+          final user = User.fromJson(jsonDecode(response.body));
+          await CacheService.cacheUser(user.toJson());
           return user;
         } else {
           final errorMessage = NetworkService.handleHttpError(response);

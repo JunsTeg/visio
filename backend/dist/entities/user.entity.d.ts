@@ -9,6 +9,9 @@ export declare class User {
     passwordHash: string;
     avatarUrl: string;
     isVerified: boolean;
+    lastLogin: Date;
+    active: boolean;
+    online: boolean;
     createdAt: Date;
     roles: Role[];
     products: Product[];

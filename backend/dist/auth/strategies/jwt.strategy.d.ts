@@ -11,6 +11,13 @@ export declare class JwtStrategy extends JwtStrategy_base {
         id: string;
         email: string;
         fullName: string;
+        phoneNumber: string;
+        isVerified: boolean;
+        lastLogin: Date;
+        active: boolean;
+        online: boolean;
+        createdAt: Date;
+        roles: import("../../entities").Role[];
     }>;
 }
 export {};

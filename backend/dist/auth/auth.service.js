@@ -123,7 +123,14 @@ let AuthService = AuthService_1 = class AuthService {
             this.logger.warn(`Mot de passe incorrect pour l'utilisateur: ${email}`);
             throw new common_1.UnauthorizedException('Email ou mot de passe incorrect');
         }
+        if (!user.active) {
+            this.logger.warn(`Tentative de connexion pour un compte désactivé: ${email}`);
+            throw new common_1.UnauthorizedException('Compte désactivé. Veuillez contacter le support.');
+        }
         this.logger.debug('Mot de passe validé avec succès');
+        user.lastLogin = new Date();
+        user.online = true;
+        await this.userRepository.save(user);
         this.logger.debug('Génération des tokens d\'authentification');
         const tokens = await this.generateTokens(user);
         this.logger.debug('Tokens générés avec succès');
@@ -135,12 +142,17 @@ let AuthService = AuthService_1 = class AuthService {
                 fullName: user.fullName,
                 phoneNumber: user.phoneNumber,
                 isVerified: user.isVerified,
+                createdAt: user.createdAt,
+                lastLogin: user.lastLogin,
+                active: user.active,
+                online: user.online,
             },
             ...tokens,
         };
     }
     async logout(userId) {
         this.logger.log(`Tentative de déconnexion pour l'utilisateur ID: ${userId}`);
+        await this.userRepository.update(userId, { online: false });
         this.logger.debug(`Suppression des tokens pour l'utilisateur ID: ${userId}`);
         const deleteResult = await this.authTokenRepository.delete({ userId });
         this.logger.debug(`Tokens supprimés: ${deleteResult.affected} tokens supprimés`);
@@ -227,6 +239,7 @@ let AuthService = AuthService_1 = class AuthService {
         this.logger.debug(`Validation de l'utilisateur avec l'ID: ${userId}`);
         const user = await this.userRepository.findOne({
             where: { id: userId },
+            relations: ['roles'],
         });
         if (user) {
             this.logger.debug(`Utilisateur validé: ${user.email} (ID: ${user.id})`);

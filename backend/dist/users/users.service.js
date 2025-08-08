@@ -58,17 +58,32 @@ let UsersService = class UsersService {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
     }
-    async findAll() {
-        return this.userRepository.find({
-            relations: ['roles'],
-            select: ['id', 'fullName', 'email', 'phoneNumber', 'isVerified', 'createdAt'],
-        });
+    async findAll({ page = 1, limit = 20, search, role, active, online }) {
+        const query = this.userRepository.createQueryBuilder('user')
+            .leftJoinAndSelect('user.roles', 'role');
+        if (search) {
+            query.andWhere('user.fullName ILIKE :search OR user.email ILIKE :search', { search: `%${search}%` });
+        }
+        if (role) {
+            query.andWhere('role.name = :role', { role });
+        }
+        if (active !== undefined) {
+            query.andWhere('user.active = :active', { active: active === 'true' });
+        }
+        if (online !== undefined) {
+            query.andWhere('user.online = :online', { online: online === 'true' });
+        }
+        const [data, total] = await query
+            .skip((page - 1) * limit)
+            .take(limit)
+            .getManyAndCount();
+        return { data, total, page: Number(page), limit: Number(limit) };
     }
     async findOne(id) {
         const user = await this.userRepository.findOne({
             where: { id },
             relations: ['roles'],
-            select: ['id', 'fullName', 'email', 'phoneNumber', 'isVerified', 'createdAt'],
+            select: ['id', 'fullName', 'email', 'phoneNumber', 'isVerified', 'createdAt', 'lastLogin', 'active', 'online'],
         });
         if (!user) {
             throw new common_1.NotFoundException('Utilisateur non trouvé');
@@ -146,8 +161,20 @@ let UsersService = class UsersService {
         if (!user) {
             throw new common_1.NotFoundException('Utilisateur non trouvé');
         }
-        await this.userRepository.remove(user);
-        return { message: 'Utilisateur supprimé avec succès' };
+        user.active = false;
+        user.online = false;
+        await this.userRepository.save(user);
+        return { message: 'Utilisateur désactivé avec succès' };
+    }
+    async activate(id) {
+        const user = await this.userRepository.findOne({ where: { id } });
+        if (!user) {
+            throw new common_1.NotFoundException('Utilisateur non trouvé');
+        }
+        user.active = true;
+        user.online = false;
+        await this.userRepository.save(user);
+        return { message: 'Utilisateur réactivé avec succès' };
     }
     async updateRoles(id, roleIds) {
         const user = await this.userRepository.findOne({
@@ -163,6 +190,39 @@ let UsersService = class UsersService {
         user.roles = roles;
         await this.userRepository.save(user);
         return this.findOne(id);
+    }
+    async getMe(userId) {
+        return this.findOne(userId);
+    }
+    async updateMe(userId, updateProfileDto) {
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+            relations: ['roles'],
+        });
+        if (!user) {
+            throw new common_1.NotFoundException('Utilisateur non trouvé');
+        }
+        const { email, password, fullName, phoneNumber } = updateProfileDto;
+        if (email && email !== user.email) {
+            const existingUser = await this.userRepository.findOne({ where: { email } });
+            if (existingUser) {
+                throw new common_1.ConflictException('Un utilisateur avec cet email existe déjà');
+            }
+            user.email = email;
+        }
+        if (fullName)
+            user.fullName = fullName;
+        if (phoneNumber !== undefined)
+            user.phoneNumber = phoneNumber;
+        if (password) {
+            const saltRounds = 12;
+            user.passwordHash = await bcrypt.hash(password, saltRounds);
+        }
+        await this.userRepository.save(user);
+        return this.findOne(userId);
+    }
+    async getRoles() {
+        return this.roleRepository.find();
     }
 };
 exports.UsersService = UsersService;

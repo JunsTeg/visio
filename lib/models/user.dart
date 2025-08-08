@@ -9,8 +9,11 @@ class User {
   final String email;
   final String? phoneNumber;
   final bool isVerified;
-  final DateTime createdAt;
+  final DateTime? createdAt; // Rendre optionnel
   final List<Role>? roles;
+  final DateTime? lastLogin;
+  final bool? active;
+  final bool? online;
 
   User({
     required this.id,
@@ -18,8 +21,11 @@ class User {
     required this.email,
     this.phoneNumber,
     required this.isVerified,
-    required this.createdAt,
+    this.createdAt, // Rendre optionnel
     this.roles,
+    this.lastLogin,
+    this.active,
+    this.online,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);

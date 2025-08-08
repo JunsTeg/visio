@@ -22,6 +22,9 @@ let User = class User {
     passwordHash;
     avatarUrl;
     isVerified;
+    lastLogin;
+    active;
+    online;
     createdAt;
     roles;
     products;
@@ -56,6 +59,18 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'is_verified', default: false }),
     __metadata("design:type", Boolean)
 ], User.prototype, "isVerified", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'last_login', type: 'timestamp', nullable: true }),
+    __metadata("design:type", Date)
+], User.prototype, "lastLogin", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'active', default: true }),
+    __metadata("design:type", Boolean)
+], User.prototype, "active", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'online', default: false }),
+    __metadata("design:type", Boolean)
+], User.prototype, "online", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)
