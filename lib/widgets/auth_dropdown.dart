@@ -73,12 +73,12 @@ class AuthDropdown extends StatelessWidget {
               ),
             ),
             const PopupMenuItem<String>(
-              value: 'settings',
+              value: 'admin',
               child: Row(
                 children: [
                   Icon(Icons.settings, size: 20),
                   SizedBox(width: 8),
-                  Text('Paramètres'),
+                  Text('Gestion personnel'),
                 ],
               ),
             ),
@@ -135,16 +135,10 @@ class AuthDropdown extends StatelessWidget {
   ) {
     switch (value) {
       case 'profile':
-        // TODO: Naviguer vers la page de profil
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Page de profil à implémenter')),
-        );
+        AppRouter.navigateToProfile(context);
         break;
-      case 'settings':
-        // TODO: Naviguer vers les paramètres
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Page des paramètres à implémenter')),
-        );
+      case 'admin':
+        AppRouter.navigateToUsersList(context);
         break;
       case 'logout':
         _showLogoutDialog(context, authProvider);

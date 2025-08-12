@@ -17,6 +17,7 @@ export declare class AuthService {
             fullName: string;
             phoneNumber: string;
             isVerified: boolean;
+            roles: import("../entities").Role[];
         };
     }>;
     login(loginDto: LoginDto): Promise<{
@@ -30,18 +31,32 @@ export declare class AuthService {
             isVerified: boolean;
             createdAt: Date;
             lastLogin: Date;
-            active: true;
+            active: boolean;
             online: boolean;
+            roles: import("../entities").Role[];
         };
     }>;
     logout(userId: string): Promise<{
         message: string;
     }>;
     refreshToken(refreshToken: string): Promise<{
+        user: {
+            id: string;
+            email: string;
+            fullName: string;
+            phoneNumber: string;
+            isVerified: boolean;
+            createdAt: Date;
+            lastLogin: Date;
+            active: boolean;
+            online: boolean;
+            roles: import("../entities").Role[];
+        };
         accessToken: string;
         refreshToken: string;
     }>;
     private generateTokens;
     validateUser(userId: string): Promise<User | null>;
     validateUserByCredentials(email: string, password: string): Promise<User | null>;
+    getUserWithRoles(userId: string): Promise<User>;
 }

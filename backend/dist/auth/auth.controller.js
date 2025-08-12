@@ -79,10 +79,11 @@ let AuthController = AuthController_1 = class AuthController {
             throw error;
         }
     }
-    getProfile(user) {
+    async getProfile(user) {
         this.logger.log(`Requête de profil reçue pour l'utilisateur ID: ${user.id}`);
         this.logger.debug(`Profil demandé pour: ${user.email} (ID: ${user.id})`);
-        return user;
+        const fullUser = await this.authService.getUserWithRoles(user.id);
+        return fullUser;
     }
 };
 exports.AuthController = AuthController;
@@ -123,7 +124,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], AuthController.prototype, "getProfile", null);
 exports.AuthController = AuthController = AuthController_1 = __decorate([
     (0, common_1.Controller)('auth'),

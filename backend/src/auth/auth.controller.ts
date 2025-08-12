@@ -77,10 +77,12 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  getProfile(@CurrentUser() user) {
+  async getProfile(@CurrentUser() user) {
     this.logger.log(`Requête de profil reçue pour l'utilisateur ID: ${user.id}`);
     this.logger.debug(`Profil demandé pour: ${user.email} (ID: ${user.id})`);
     
-    return user;
+    // Récupérer l'utilisateur complet avec ses rôles depuis la base de données
+    const fullUser = await this.authService.getUserWithRoles(user.id);
+    return fullUser;
   }
 } 

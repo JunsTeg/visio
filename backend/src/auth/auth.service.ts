@@ -72,6 +72,7 @@ export class AuthService {
         fullName: savedUser.fullName,
         phoneNumber: savedUser.phoneNumber,
         isVerified: savedUser.isVerified,
+        roles: savedUser.roles || [],
       },
       ...tokens,
     };
@@ -116,6 +117,12 @@ export class AuthService {
     user.online = true;
     await this.userRepository.save(user);
 
+    // Récupérer l'utilisateur avec ses rôles
+    const userWithRoles = await this.userRepository.findOne({
+      where: { id: user.id },
+      relations: ['roles'],
+    });
+
     // Générer les tokens
     this.logger.debug('Génération des tokens d\'authentification');
     const tokens = await this.generateTokens(user);
@@ -125,15 +132,16 @@ export class AuthService {
 
     return {
       user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        phoneNumber: user.phoneNumber,
-        isVerified: user.isVerified,
-        createdAt: user.createdAt,
-        lastLogin: user.lastLogin,
-        active: user.active,
-        online: user.online,
+        id: userWithRoles.id,
+        email: userWithRoles.email,
+        fullName: userWithRoles.fullName,
+        phoneNumber: userWithRoles.phoneNumber,
+        isVerified: userWithRoles.isVerified,
+        createdAt: userWithRoles.createdAt,
+        lastLogin: userWithRoles.lastLogin,
+        active: userWithRoles.active,
+        online: userWithRoles.online,
+        roles: userWithRoles.roles,
       },
       ...tokens,
     };
@@ -209,9 +217,29 @@ export class AuthService {
       this.logger.debug(`Suppression de l'ancien refresh token, ID: ${tokenRecord.id}`);
       await this.authTokenRepository.delete({ id: tokenRecord.id });
 
+      // Récupérer l'utilisateur avec ses rôles
+      const userWithRoles = await this.userRepository.findOne({
+        where: { id: user.id },
+        relations: ['roles'],
+      });
+
       this.logger.log(`Rafraîchissement de token réussi pour l'utilisateur: ${user.email} (ID: ${user.id})`);
 
-      return tokens;
+      return {
+        ...tokens,
+        user: {
+          id: userWithRoles.id,
+          email: userWithRoles.email,
+          fullName: userWithRoles.fullName,
+          phoneNumber: userWithRoles.phoneNumber,
+          isVerified: userWithRoles.isVerified,
+          createdAt: userWithRoles.createdAt,
+          lastLogin: userWithRoles.lastLogin,
+          active: userWithRoles.active,
+          online: userWithRoles.online,
+          roles: userWithRoles.roles,
+        },
+      };
     } catch (error) {
       this.logger.error(`Erreur lors du rafraîchissement de token: ${error.message}`, error.stack);
       throw new UnauthorizedException('Token de rafraîchissement invalide');
@@ -299,5 +327,22 @@ export class AuthService {
     }
     
     return isPasswordValid ? user : null;
+  }
+
+  async getUserWithRoles(userId: string) {
+    this.logger.debug(`Récupération de l'utilisateur avec rôles pour l'ID: ${userId}`);
+    
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['roles'],
+    });
+
+    if (!user) {
+      this.logger.warn(`Utilisateur non trouvé pour l'ID: ${userId}`);
+      throw new UnauthorizedException('Utilisateur non trouvé');
+    }
+
+    this.logger.debug(`Utilisateur récupéré avec ${user.roles?.length || 0} rôles`);
+    return user;
   }
 } 

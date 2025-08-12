@@ -102,6 +102,7 @@ let AuthService = AuthService_1 = class AuthService {
                 fullName: savedUser.fullName,
                 phoneNumber: savedUser.phoneNumber,
                 isVerified: savedUser.isVerified,
+                roles: savedUser.roles || [],
             },
             ...tokens,
         };
@@ -131,21 +132,26 @@ let AuthService = AuthService_1 = class AuthService {
         user.lastLogin = new Date();
         user.online = true;
         await this.userRepository.save(user);
+        const userWithRoles = await this.userRepository.findOne({
+            where: { id: user.id },
+            relations: ['roles'],
+        });
         this.logger.debug('Génération des tokens d\'authentification');
         const tokens = await this.generateTokens(user);
         this.logger.debug('Tokens générés avec succès');
         this.logger.log(`Connexion réussie pour l'utilisateur: ${user.email} (ID: ${user.id})`);
         return {
             user: {
-                id: user.id,
-                email: user.email,
-                fullName: user.fullName,
-                phoneNumber: user.phoneNumber,
-                isVerified: user.isVerified,
-                createdAt: user.createdAt,
-                lastLogin: user.lastLogin,
-                active: user.active,
-                online: user.online,
+                id: userWithRoles.id,
+                email: userWithRoles.email,
+                fullName: userWithRoles.fullName,
+                phoneNumber: userWithRoles.phoneNumber,
+                isVerified: userWithRoles.isVerified,
+                createdAt: userWithRoles.createdAt,
+                lastLogin: userWithRoles.lastLogin,
+                active: userWithRoles.active,
+                online: userWithRoles.online,
+                roles: userWithRoles.roles,
             },
             ...tokens,
         };
@@ -196,8 +202,26 @@ let AuthService = AuthService_1 = class AuthService {
             this.logger.debug('Nouveaux tokens générés avec succès');
             this.logger.debug(`Suppression de l'ancien refresh token, ID: ${tokenRecord.id}`);
             await this.authTokenRepository.delete({ id: tokenRecord.id });
+            const userWithRoles = await this.userRepository.findOne({
+                where: { id: user.id },
+                relations: ['roles'],
+            });
             this.logger.log(`Rafraîchissement de token réussi pour l'utilisateur: ${user.email} (ID: ${user.id})`);
-            return tokens;
+            return {
+                ...tokens,
+                user: {
+                    id: userWithRoles.id,
+                    email: userWithRoles.email,
+                    fullName: userWithRoles.fullName,
+                    phoneNumber: userWithRoles.phoneNumber,
+                    isVerified: userWithRoles.isVerified,
+                    createdAt: userWithRoles.createdAt,
+                    lastLogin: userWithRoles.lastLogin,
+                    active: userWithRoles.active,
+                    online: userWithRoles.online,
+                    roles: userWithRoles.roles,
+                },
+            };
         }
         catch (error) {
             this.logger.error(`Erreur lors du rafraîchissement de token: ${error.message}`, error.stack);
@@ -267,6 +291,19 @@ let AuthService = AuthService_1 = class AuthService {
             this.logger.debug(`Mot de passe incorrect pour l'utilisateur: ${user.email}`);
         }
         return isPasswordValid ? user : null;
+    }
+    async getUserWithRoles(userId) {
+        this.logger.debug(`Récupération de l'utilisateur avec rôles pour l'ID: ${userId}`);
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+            relations: ['roles'],
+        });
+        if (!user) {
+            this.logger.warn(`Utilisateur non trouvé pour l'ID: ${userId}`);
+            throw new common_1.UnauthorizedException('Utilisateur non trouvé');
+        }
+        this.logger.debug(`Utilisateur récupéré avec ${user.roles?.length || 0} rôles`);
+        return user;
     }
 };
 exports.AuthService = AuthService;

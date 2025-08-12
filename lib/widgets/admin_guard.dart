@@ -48,30 +48,20 @@ class AdminGuard extends StatelessWidget {
               Navigator.of(context).pop(); // Retour à l'écran précédent
             }
           });
-
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text('Accès refusé'),
-              automaticallyImplyLeading: false,
-            ),
-            body: const Center(
+          return const Scaffold(
+            body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.security, size: 64, color: Colors.red),
+                  Icon(Icons.block, size: 64, color: Colors.red),
                   SizedBox(height: 16),
                   Text(
                     'Accès refusé',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
-                    ),
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Vous n\'avez pas les permissions nécessaires\npour accéder à cette page.',
-                    textAlign: TextAlign.center,
+                    'Vous n\'avez pas les permissions nécessaires',
                     style: TextStyle(fontSize: 16, color: Colors.grey),
                   ),
                 ],
