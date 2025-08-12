@@ -70,18 +70,21 @@ class SecurityService {
     return emailRegex.hasMatch(email);
   }
 
-  // Validation des numéros de téléphone
+  // Validation des numéros de téléphone (format international)
   static bool isValidPhoneNumber(String phone) {
-    // Supprimer les espaces et caractères spéciaux
-    final cleanPhone = phone.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    // Supprimer les espaces et caractères spéciaux pour la vérification
+    final cleanPhone = phone.replaceAll(RegExp(r'[\s\-\(\)\.]'), '');
 
-    // Vérifier si c'est un numéro français valide
-    if (cleanPhone.startsWith('+33') && cleanPhone.length == 12) {
-      return true;
-    }
-
-    // Vérifier si c'est un numéro français sans indicatif
-    if (cleanPhone.startsWith('0') && cleanPhone.length == 10) {
+    // Vérification simple : doit commencer par + ou 0 et avoir une longueur raisonnable
+    if (cleanPhone.startsWith('+')) {
+      // Format international : +[indicatif][numéro]
+      // Longueur typique : +1 (USA/Canada), +33 (France), +44 (UK), +49 (Allemagne), etc.
+      return cleanPhone.length >= 8 && cleanPhone.length <= 16;
+    } else if (cleanPhone.startsWith('0')) {
+      // Format national (sans indicatif international)
+      return cleanPhone.length >= 8 && cleanPhone.length <= 12;
+    } else if (cleanPhone.length >= 7 && cleanPhone.length <= 15) {
+      // Format sans préfixe (peut être valide pour certains pays)
       return true;
     }
 

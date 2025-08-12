@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsPhoneNumber, IsBoolean, IsArray, IsNumber } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsBoolean, IsArray, IsNumber, Matches, IsUrl } from 'class-validator';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -16,7 +16,9 @@ export class UpdateUserDto {
   password?: string;
 
   @IsOptional()
-  @IsPhoneNumber()
+  @Matches(/^[\+]?[0-9\s\-\(\)\.]{7,20}$/, {
+    message: 'Format de numéro de téléphone invalide. Utilisez un format international (ex: +33123456789)'
+  })
   phoneNumber?: string;
 
   @IsOptional()
@@ -27,6 +29,10 @@ export class UpdateUserDto {
   @IsArray()
   @IsNumber({}, { each: true })
   roleIds?: number[];
+
+  @IsOptional()
+  @IsUrl({}, { message: 'avatarUrl doit être une URL valide' })
+  avatarUrl?: string;
 }
 
 export class UpdateProfileDto {
@@ -45,6 +51,12 @@ export class UpdateProfileDto {
   password?: string;
 
   @IsOptional()
-  @IsPhoneNumber()
+  @Matches(/^[\+]?[0-9\s\-\(\)\.]{7,20}$/, {
+    message: 'Format de numéro de téléphone invalide. Utilisez un format international (ex: +33123456789)'
+  })
   phoneNumber?: string;
+
+  @IsOptional()
+  @IsUrl({}, { message: 'avatarUrl doit être une URL valide' })
+  avatarUrl?: string;
 } 

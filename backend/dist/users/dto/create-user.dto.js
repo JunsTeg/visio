@@ -36,7 +36,9 @@ __decorate([
 ], CreateUserDto.prototype, "password", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsPhoneNumber)(),
+    (0, class_validator_1.Matches)(/^[\+]?[0-9\s\-\(\)\.]{7,20}$/, {
+        message: 'Format de numéro de téléphone invalide. Utilisez un format international (ex: +33123456789)'
+    }),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "phoneNumber", void 0);
 __decorate([

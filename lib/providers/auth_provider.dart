@@ -68,17 +68,48 @@ class AuthProvider with ChangeNotifier {
   }
 
   // Connexion
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(LoginRequest request) async {
     try {
       _setLoading(true);
       _clearError();
 
-      final request = LoginRequest(email: email, password: password);
-      final response = await _authService.login(request);
+      final authResponse = await _authService.login(request);
 
-      _setAuthenticated(response.user);
+      // Vérifier si le compte est désactivé
+      if (authResponse.user.active == false) {
+        _setError('Compte désactivé. Veuillez contacter le support.');
+        return false;
+      }
+
+      // S'assurer que les rôles sont chargés
+      if (authResponse.user.roles == null || authResponse.user.roles!.isEmpty) {
+        // Recharger le profil pour obtenir les rôles complets
+        try {
+          final updatedUser = await _authService.getProfile();
+          _setAuthenticated(updatedUser);
+        } catch (profileError) {
+          // Si le rechargement échoue, utiliser l'utilisateur de la réponse de connexion
+          _setAuthenticated(authResponse.user);
+        }
+      } else {
+        _setAuthenticated(authResponse.user);
+      }
+
       return true;
     } catch (e) {
+      final errorMessage = e.toString();
+
+      // Déconnexion automatique pour certaines erreurs
+      if (errorMessage.contains('Compte désactivé') ||
+          errorMessage.contains('401') ||
+          errorMessage.contains('403') ||
+          errorMessage.contains('Unauthorized') ||
+          errorMessage.contains('Forbidden')) {
+        _setError('Accès refusé. Veuillez vérifier vos identifiants.');
+        _setUnauthenticated();
+        return false;
+      }
+
       _setError('Erreur de connexion: $e');
       return false;
     } finally {
@@ -87,22 +118,10 @@ class AuthProvider with ChangeNotifier {
   }
 
   // Inscription
-  Future<bool> register(
-    String fullName,
-    String email,
-    String password,
-    String? phoneNumber,
-  ) async {
+  Future<bool> register(RegisterRequest request) async {
     try {
       _setLoading(true);
       _clearError();
-
-      final request = RegisterRequest(
-        fullName: fullName,
-        email: email,
-        password: password,
-        phoneNumber: phoneNumber,
-      );
 
       final response = await _authService.register(request);
       _setAuthenticated(response.user);
@@ -211,6 +230,42 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // Méthode pour forcer le rechargement du profil et des rôles
+  Future<void> refreshProfile() async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final updatedUser = await _authService.getProfile();
+
+      // Vérifier si le compte est désactivé
+      if (updatedUser.active == false) {
+        _setError('Compte désactivé. Vous avez été déconnecté.');
+        _setUnauthenticated();
+        return;
+      }
+
+      _setAuthenticated(updatedUser);
+    } catch (e) {
+      final errorMessage = e.toString();
+
+      // Déconnexion automatique pour certaines erreurs
+      if (errorMessage.contains('Compte désactivé') ||
+          errorMessage.contains('401') ||
+          errorMessage.contains('403') ||
+          errorMessage.contains('Unauthorized') ||
+          errorMessage.contains('Forbidden')) {
+        _setError('Accès refusé. Vous avez été déconnecté.');
+        _setUnauthenticated();
+        return;
+      }
+
+      _setError('Erreur de mise à jour du profil: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Méthodes privées pour gérer l'état
   void _setLoading(bool loading) {
     _isLoading = loading;
@@ -252,5 +307,14 @@ class AuthProvider with ChangeNotifier {
   void clearError() {
     _clearError();
     notifyListeners();
+  }
+
+  // Obtenir le token d'accès
+  Future<String?> getAccessToken() async {
+    try {
+      return await _authService.getAccessToken();
+    } catch (e) {
+      return null;
+    }
   }
 }

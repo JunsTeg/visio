@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Logger } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Logger, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -81,8 +81,17 @@ export class AuthController {
     this.logger.log(`Requête de profil reçue pour l'utilisateur ID: ${user.id}`);
     this.logger.debug(`Profil demandé pour: ${user.email} (ID: ${user.id})`);
     
-    // Récupérer l'utilisateur complet avec ses rôles depuis la base de données
-    const fullUser = await this.authService.getUserWithRoles(user.id);
-    return fullUser;
+    // Recharger l'utilisateur avec ses relations depuis la base de données
+    const userWithRoles = await this.authService.validateUser(user.id);
+    
+    if (!userWithRoles) {
+      this.logger.error(`Utilisateur non trouvé lors de la récupération du profil pour l'ID: ${user.id}`);
+      throw new UnauthorizedException('Utilisateur non trouvé');
+    }
+    
+    this.logger.debug(`Profil récupéré avec succès pour: ${userWithRoles.email} (ID: ${userWithRoles.id})`);
+    this.logger.debug(`Rôles de l'utilisateur: ${JSON.stringify(userWithRoles.roles?.map(r => r.name))}`);
+    
+    return userWithRoles;
   }
 } 

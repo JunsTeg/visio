@@ -12,6 +12,7 @@ export declare class AuthController {
             email: string;
             fullName: string;
             phoneNumber: string;
+            avatarUrl: string;
             isVerified: boolean;
             roles: import("../entities").Role[];
         };
@@ -27,7 +28,7 @@ export declare class AuthController {
             isVerified: boolean;
             createdAt: Date;
             lastLogin: Date;
-            active: boolean;
+            active: true;
             online: boolean;
             roles: import("../entities").Role[];
         };
@@ -38,18 +39,6 @@ export declare class AuthController {
     refreshToken(body: {
         refreshToken: string;
     }): Promise<{
-        user: {
-            id: string;
-            email: string;
-            fullName: string;
-            phoneNumber: string;
-            isVerified: boolean;
-            createdAt: Date;
-            lastLogin: Date;
-            active: boolean;
-            online: boolean;
-            roles: import("../entities").Role[];
-        };
         accessToken: string;
         refreshToken: string;
     }>;

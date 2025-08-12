@@ -25,16 +25,34 @@ export class UsersController {
     return this.usersService.findAll({ page, limit, search, role, active, online });
   }
 
-  @Get(':id')
+  @Get('roles')
   @Roles('admin')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  async getRoles() {
+    return this.usersService.getRoles();
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  getMe(@CurrentUser() user) {
+    return this.usersService.getMe(user.id);
+  }
+
+  @Put('me')
+  @UseGuards(JwtAuthGuard)
+  updateMe(@CurrentUser() user, @Body() updateProfileDto: UpdateProfileDto) {
+    return this.usersService.updateMe(user.id, updateProfileDto);
   }
 
   @Post()
   @Roles('admin')
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
+  }
+
+  @Get(':id')
+  @Roles('admin')
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
   }
 
   @Put(':id')
@@ -59,23 +77,5 @@ export class UsersController {
   @Roles('admin')
   async activate(@Param('id') id: string) {
     return this.usersService.activate(id);
-  }
-
-  @Get('me')
-  @UseGuards(JwtAuthGuard)
-  getMe(@CurrentUser() user) {
-    return this.usersService.getMe(user.id);
-  }
-
-  @Put('me')
-  @UseGuards(JwtAuthGuard)
-  updateMe(@CurrentUser() user, @Body() updateProfileDto: UpdateProfileDto) {
-    return this.usersService.updateMe(user.id, updateProfileDto);
-  }
-
-  @Get('/roles')
-  @Roles('admin')
-  async getRoles() {
-    return this.usersService.getRoles();
   }
 } 

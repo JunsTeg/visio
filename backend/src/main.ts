@@ -1,13 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
   // Configuration des logs
   const logger = new Logger('Bootstrap');
   
   // Créer l'application avec les logs activés
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
   
@@ -23,7 +25,13 @@ async function bootstrap() {
   // Configuration CORS
   app.enableCors();
   
+  // Configuration des fichiers statiques pour les uploads
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
+  
   logger.log('Configuration CORS activée');
+  logger.log('Configuration des fichiers statiques activée');
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);

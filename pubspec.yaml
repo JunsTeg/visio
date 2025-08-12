@@ -49,6 +49,7 @@ dependencies:
   
   # JSON serialization
   json_annotation: ^4.8.1
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

@@ -18,6 +18,7 @@ class UpdateUserDto {
     phoneNumber;
     isVerified;
     roleIds;
+    avatarUrl;
 }
 exports.UpdateUserDto = UpdateUserDto;
 __decorate([
@@ -39,7 +40,9 @@ __decorate([
 ], UpdateUserDto.prototype, "password", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsPhoneNumber)(),
+    (0, class_validator_1.Matches)(/^[\+]?[0-9\s\-\(\)\.]{7,20}$/, {
+        message: 'Format de numéro de téléphone invalide. Utilisez un format international (ex: +33123456789)'
+    }),
     __metadata("design:type", String)
 ], UpdateUserDto.prototype, "phoneNumber", void 0);
 __decorate([
@@ -53,11 +56,17 @@ __decorate([
     (0, class_validator_1.IsNumber)({}, { each: true }),
     __metadata("design:type", Array)
 ], UpdateUserDto.prototype, "roleIds", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUrl)({}, { message: 'avatarUrl doit être une URL valide' }),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "avatarUrl", void 0);
 class UpdateProfileDto {
     fullName;
     email;
     password;
     phoneNumber;
+    avatarUrl;
 }
 exports.UpdateProfileDto = UpdateProfileDto;
 __decorate([
@@ -79,7 +88,14 @@ __decorate([
 ], UpdateProfileDto.prototype, "password", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsPhoneNumber)(),
+    (0, class_validator_1.Matches)(/^[\+]?[0-9\s\-\(\)\.]{7,20}$/, {
+        message: 'Format de numéro de téléphone invalide. Utilisez un format international (ex: +33123456789)'
+    }),
     __metadata("design:type", String)
 ], UpdateProfileDto.prototype, "phoneNumber", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUrl)({}, { message: 'avatarUrl doit être une URL valide' }),
+    __metadata("design:type", String)
+], UpdateProfileDto.prototype, "avatarUrl", void 0);
 //# sourceMappingURL=update-user.dto.js.map

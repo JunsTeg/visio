@@ -10,8 +10,11 @@ export declare class UsersController {
         page: number;
         limit: number;
     }>;
-    findOne(id: string): Promise<import("../entities").User>;
+    getRoles(): Promise<import("../entities").Role[]>;
+    getMe(user: any): Promise<import("../entities").User>;
+    updateMe(user: any, updateProfileDto: UpdateProfileDto): Promise<import("../entities").User>;
     create(createUserDto: CreateUserDto): Promise<import("../entities").User>;
+    findOne(id: string): Promise<import("../entities").User>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<import("../entities").User>;
     remove(id: string): Promise<{
         message: string;
@@ -22,7 +25,4 @@ export declare class UsersController {
     activate(id: string): Promise<{
         message: string;
     }>;
-    getMe(user: any): Promise<import("../entities").User>;
-    updateMe(user: any, updateProfileDto: UpdateProfileDto): Promise<import("../entities").User>;
-    getRoles(): Promise<import("../entities").Role[]>;
 }

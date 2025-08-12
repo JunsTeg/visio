@@ -8,6 +8,7 @@ class User {
   final String fullName;
   final String email;
   final String? phoneNumber;
+  final String? avatarUrl;
   final bool isVerified;
   final DateTime? createdAt; // Rendre optionnel
   final List<Role>? roles;
@@ -20,6 +21,7 @@ class User {
     required this.fullName,
     required this.email,
     this.phoneNumber,
+    this.avatarUrl,
     required this.isVerified,
     this.createdAt, // Rendre optionnel
     this.roles,

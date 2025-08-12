@@ -16,6 +16,8 @@ class RegisterDto {
     email;
     password;
     phoneNumber;
+    role;
+    avatarUrl;
 }
 exports.RegisterDto = RegisterDto;
 __decorate([
@@ -34,7 +36,20 @@ __decorate([
 ], RegisterDto.prototype, "password", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsPhoneNumber)(),
+    (0, class_validator_1.Matches)(/^[\+]?[0-9\s\-\(\)\.]{7,20}$/, {
+        message: 'Format de numéro de téléphone invalide. Utilisez un format international (ex: +33123456789)'
+    }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "phoneNumber", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsIn)(['user', 'seller'], { message: 'Rôle invalide. Valeurs autorisées: user, seller' }),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "role", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUrl)({}, { message: 'avatarUrl doit être une URL valide' }),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "avatarUrl", void 0);
 //# sourceMappingURL=register.dto.js.map

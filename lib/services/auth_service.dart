@@ -146,31 +146,15 @@ class AuthService {
       );
 
       if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
+        final authResponse = AuthResponse.fromJson(jsonDecode(response.body));
 
-        // Le refresh token peut maintenant retourner un objet avec user et tokens
-        if (responseData['user'] != null) {
-          final authResponse = AuthResponse.fromJson(responseData);
+        // Sauvegarder les nouveaux tokens
+        await _apiClient.saveTokens(
+          authResponse.accessToken,
+          authResponse.refreshToken,
+        );
 
-          // Sauvegarder les nouveaux tokens
-          await _apiClient.saveTokens(
-            authResponse.accessToken,
-            authResponse.refreshToken,
-          );
-
-          return authResponse;
-        } else {
-          // Ancien format (tokens seulement)
-          final authResponse = AuthResponse.fromJson(responseData);
-
-          // Sauvegarder les nouveaux tokens
-          await _apiClient.saveTokens(
-            authResponse.accessToken,
-            authResponse.refreshToken,
-          );
-
-          return authResponse;
-        }
+        return authResponse;
       } else {
         throw Exception('Erreur de rafraîchissement du token');
       }
@@ -253,8 +237,13 @@ class AuthService {
     return token != null;
   }
 
-  // Obtenir le token d'accès actuel
-  Future<String?> getCurrentToken() async {
+  // Méthode pour obtenir le token d'accès
+  Future<String?> getAccessToken() async {
     return await _apiClient.getAccessToken();
+  }
+
+  // Méthode pour obtenir le token de rafraîchissement
+  Future<String?> getRefreshToken() async {
+    return await _apiClient.getRefreshToken();
   }
 }

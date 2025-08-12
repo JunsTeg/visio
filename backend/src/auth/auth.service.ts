@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { User, AuthToken } from '../entities';
+import { User, AuthToken, Role } from '../entities';
 import { LoginDto, RegisterDto } from './dto';
 
 @Injectable()
@@ -15,6 +15,8 @@ export class AuthService {
     private userRepository: Repository<User>,
     @InjectRepository(AuthToken)
     private authTokenRepository: Repository<AuthToken>,
+    @InjectRepository(Role)
+    private roleRepository: Repository<Role>,
     private jwtService: JwtService,
   ) {
     this.logger.log('AuthService initialisé');
@@ -23,7 +25,7 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     this.logger.log(`Tentative d'inscription pour l'email: ${registerDto.email}`);
     
-    const { email, password, fullName, phoneNumber } = registerDto;
+    const { email, password, fullName, phoneNumber, role, avatarUrl } = registerDto;
 
     // Vérifier si l'utilisateur existe déjà
     this.logger.debug(`Vérification de l'existence de l'utilisateur avec l'email: ${email}`);
@@ -38,20 +40,34 @@ export class AuthService {
 
     this.logger.debug('Aucun utilisateur existant trouvé, procédure d\'inscription en cours');
 
+    // Récupérer le rôle choisi ou "user" par défaut
+    const requestedRole = (role || 'user').toLowerCase();
+    this.logger.debug(`Récupération du rôle à assigner: ${requestedRole}`);
+    const userRole = await this.roleRepository.findOne({
+      where: { name: requestedRole },
+    });
+
+    if (!userRole) {
+      this.logger.error(`Rôle "${requestedRole}" non trouvé en base de données`);
+      throw new Error('Configuration des rôles manquante. Veuillez contacter l\'administrateur.');
+    }
+
     // Hasher le mot de passe
     this.logger.debug('Hachage du mot de passe en cours...');
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(password, saltRounds);
     this.logger.debug('Mot de passe haché avec succès');
 
-    // Créer le nouvel utilisateur
-    this.logger.debug('Création de l\'entité utilisateur');
+    // Créer le nouvel utilisateur avec le rôle par défaut
+    this.logger.debug('Création de l\'entité utilisateur avec le rôle par défaut');
     const user = this.userRepository.create({
       email,
       passwordHash,
       fullName,
       phoneNumber,
+      avatarUrl,
       isVerified: false,
+      roles: [userRole],
     });
 
     this.logger.debug('Sauvegarde de l\'utilisateur en base de données');
@@ -63,16 +79,28 @@ export class AuthService {
     const tokens = await this.generateTokens(savedUser);
     this.logger.debug('Tokens générés avec succès');
 
+    // Récupérer l'utilisateur avec ses rôles pour la réponse
+    const userWithRoles = await this.userRepository.findOne({
+      where: { id: savedUser.id },
+      relations: ['roles'],
+    });
+
+    if (!userWithRoles) {
+      this.logger.error(`Erreur: Impossible de récupérer l'utilisateur avec ses rôles après création`);
+      throw new Error('Erreur lors de la création de l\'utilisateur');
+    }
+
     this.logger.log(`Inscription réussie pour l'utilisateur: ${savedUser.email} (ID: ${savedUser.id})`);
 
     return {
       user: {
-        id: savedUser.id,
-        email: savedUser.email,
-        fullName: savedUser.fullName,
-        phoneNumber: savedUser.phoneNumber,
-        isVerified: savedUser.isVerified,
-        roles: savedUser.roles || [],
+        id: userWithRoles.id,
+        email: userWithRoles.email,
+        fullName: userWithRoles.fullName,
+        phoneNumber: userWithRoles.phoneNumber,
+        avatarUrl: userWithRoles.avatarUrl,
+        isVerified: userWithRoles.isVerified,
+        roles: userWithRoles.roles,
       },
       ...tokens,
     };
@@ -83,10 +111,11 @@ export class AuthService {
     
     const { email, password } = loginDto;
 
-    // Trouver l'utilisateur
+    // Trouver l'utilisateur avec ses rôles
     this.logger.debug(`Recherche de l'utilisateur avec l'email: ${email}`);
     const user = await this.userRepository.findOne({
       where: { email },
+      relations: ['roles'],
     });
 
     if (!user) {
@@ -117,11 +146,8 @@ export class AuthService {
     user.online = true;
     await this.userRepository.save(user);
 
-    // Récupérer l'utilisateur avec ses rôles
-    const userWithRoles = await this.userRepository.findOne({
-      where: { id: user.id },
-      relations: ['roles'],
-    });
+    // Log des rôles pour débogage
+    this.logger.debug(`Rôles de l'utilisateur ${user.email}: ${JSON.stringify(user.roles?.map(r => ({ id: r.id, name: r.name })))}`);
 
     // Générer les tokens
     this.logger.debug('Génération des tokens d\'authentification');
@@ -130,21 +156,29 @@ export class AuthService {
 
     this.logger.log(`Connexion réussie pour l'utilisateur: ${user.email} (ID: ${user.id})`);
 
-    return {
+    const response = {
       user: {
-        id: userWithRoles.id,
-        email: userWithRoles.email,
-        fullName: userWithRoles.fullName,
-        phoneNumber: userWithRoles.phoneNumber,
-        isVerified: userWithRoles.isVerified,
-        createdAt: userWithRoles.createdAt,
-        lastLogin: userWithRoles.lastLogin,
-        active: userWithRoles.active,
-        online: userWithRoles.online,
-        roles: userWithRoles.roles,
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        phoneNumber: user.phoneNumber,
+        isVerified: user.isVerified,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin,
+        active: user.active,
+        online: user.online,
+        roles: user.roles,
       },
       ...tokens,
     };
+
+    // Log de la réponse pour débogage
+    this.logger.debug(`Réponse de connexion pour ${user.email}: ${JSON.stringify({
+      ...response,
+      user: { ...response.user, roles: response.user.roles?.map(r => ({ id: r.id, name: r.name })) }
+    })}`);
+
+    return response;
   }
 
   async logout(userId: string) {
@@ -217,29 +251,9 @@ export class AuthService {
       this.logger.debug(`Suppression de l'ancien refresh token, ID: ${tokenRecord.id}`);
       await this.authTokenRepository.delete({ id: tokenRecord.id });
 
-      // Récupérer l'utilisateur avec ses rôles
-      const userWithRoles = await this.userRepository.findOne({
-        where: { id: user.id },
-        relations: ['roles'],
-      });
-
       this.logger.log(`Rafraîchissement de token réussi pour l'utilisateur: ${user.email} (ID: ${user.id})`);
 
-      return {
-        ...tokens,
-        user: {
-          id: userWithRoles.id,
-          email: userWithRoles.email,
-          fullName: userWithRoles.fullName,
-          phoneNumber: userWithRoles.phoneNumber,
-          isVerified: userWithRoles.isVerified,
-          createdAt: userWithRoles.createdAt,
-          lastLogin: userWithRoles.lastLogin,
-          active: userWithRoles.active,
-          online: userWithRoles.online,
-          roles: userWithRoles.roles,
-        },
-      };
+      return tokens;
     } catch (error) {
       this.logger.error(`Erreur lors du rafraîchissement de token: ${error.message}`, error.stack);
       throw new UnauthorizedException('Token de rafraîchissement invalide');
@@ -298,6 +312,7 @@ export class AuthService {
 
     if (user) {
       this.logger.debug(`Utilisateur validé: ${user.email} (ID: ${user.id})`);
+      this.logger.debug(`Rôles de l'utilisateur ${user.email}: ${JSON.stringify(user.roles?.map(r => ({ id: r.id, name: r.name })))}`);
     } else {
       this.logger.debug(`Utilisateur non trouvé pour l'ID: ${userId}`);
     }
@@ -327,22 +342,5 @@ export class AuthService {
     }
     
     return isPasswordValid ? user : null;
-  }
-
-  async getUserWithRoles(userId: string) {
-    this.logger.debug(`Récupération de l'utilisateur avec rôles pour l'ID: ${userId}`);
-    
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-      relations: ['roles'],
-    });
-
-    if (!user) {
-      this.logger.warn(`Utilisateur non trouvé pour l'ID: ${userId}`);
-      throw new UnauthorizedException('Utilisateur non trouvé');
-    }
-
-    this.logger.debug(`Utilisateur récupéré avec ${user.roles?.length || 0} rôles`);
-    return user;
   }
 } 

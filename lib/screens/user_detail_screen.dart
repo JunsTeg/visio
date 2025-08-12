@@ -47,7 +47,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Détail utilisateur'),
+        title: const Text('Détails utilisateur'),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),

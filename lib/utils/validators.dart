@@ -41,15 +41,24 @@ class Validators {
     return null;
   }
 
-  // Validation de numéro de téléphone
+  // Validation de numéro de téléphone (format international)
   static String? validatePhone(String? value) {
     if (value == null || value.isEmpty) {
       return null; // Optionnel
     }
 
-    final phoneRegex = RegExp(r'^[\+]?[0-9\s\-\(\)]{8,}$');
+    // Regex universelle pour les numéros de téléphone internationaux
+    // Accepte : +[indicatif][numéro], (indicatif)[numéro], indicatif-numéro, etc.
+    final phoneRegex = RegExp(r'^[\+]?[0-9\s\-\(\)\.]{7,20}$');
+
     if (!phoneRegex.hasMatch(value)) {
       return AppConstants.phoneInvalid;
+    }
+
+    // Vérification supplémentaire : doit contenir au moins 7 chiffres
+    final digitsOnly = value.replaceAll(RegExp(r'[^\d]'), '');
+    if (digitsOnly.length < 7 || digitsOnly.length > 15) {
+      return 'Le numéro doit contenir entre 7 et 15 chiffres';
     }
 
     return null;

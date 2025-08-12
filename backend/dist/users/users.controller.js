@@ -29,11 +29,20 @@ let UsersController = class UsersController {
     findAll(page, limit, search, role, active, online) {
         return this.usersService.findAll({ page, limit, search, role, active, online });
     }
-    findOne(id) {
-        return this.usersService.findOne(id);
+    async getRoles() {
+        return this.usersService.getRoles();
+    }
+    getMe(user) {
+        return this.usersService.getMe(user.id);
+    }
+    updateMe(user, updateProfileDto) {
+        return this.usersService.updateMe(user.id, updateProfileDto);
     }
     create(createUserDto) {
         return this.usersService.create(createUserDto);
+    }
+    findOne(id) {
+        return this.usersService.findOne(id);
     }
     update(id, updateUserDto) {
         return this.usersService.update(id, updateUserDto);
@@ -46,15 +55,6 @@ let UsersController = class UsersController {
     }
     async activate(id) {
         return this.usersService.activate(id);
-    }
-    getMe(user) {
-        return this.usersService.getMe(user.id);
-    }
-    updateMe(user, updateProfileDto) {
-        return this.usersService.updateMe(user.id, updateProfileDto);
-    }
-    async getRoles() {
-        return this.usersService.getRoles();
     }
 };
 exports.UsersController = UsersController;
@@ -72,13 +72,29 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "findAll", null);
 __decorate([
-    (0, common_1.Get)(':id'),
+    (0, common_1.Get)('roles'),
     (0, roles_decorator_1.Roles)('admin'),
-    __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getRoles", null);
+__decorate([
+    (0, common_1.Get)('me'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
-], UsersController.prototype, "findOne", null);
+], UsersController.prototype, "getMe", null);
+__decorate([
+    (0, common_1.Put)('me'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, update_user_dto_1.UpdateProfileDto]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "updateMe", null);
 __decorate([
     (0, common_1.Post)(),
     (0, roles_decorator_1.Roles)('admin'),
@@ -87,6 +103,14 @@ __decorate([
     __metadata("design:paramtypes", [dto_1.CreateUserDto]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, roles_decorator_1.Roles)('admin'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Put)(':id'),
     (0, roles_decorator_1.Roles)('admin'),
@@ -121,30 +145,6 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "activate", null);
-__decorate([
-    (0, common_1.Get)('me'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
-], UsersController.prototype, "getMe", null);
-__decorate([
-    (0, common_1.Put)('me'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, update_user_dto_1.UpdateProfileDto]),
-    __metadata("design:returntype", void 0)
-], UsersController.prototype, "updateMe", null);
-__decorate([
-    (0, common_1.Get)('/roles'),
-    (0, roles_decorator_1.Roles)('admin'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], UsersController.prototype, "getRoles", null);
 exports.UsersController = UsersController = __decorate([
     (0, common_1.Controller)('users'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

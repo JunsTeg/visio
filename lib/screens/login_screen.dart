@@ -7,6 +7,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/error_widget.dart';
 import 'register_screen.dart';
+import '../models/login_request.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,10 +31,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = await authProvider.login(
-        _emailController.text.trim(),
-        _passwordController.text,
+
+      final loginRequest = LoginRequest(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
+
+      final success = await authProvider.login(loginRequest);
 
       if (success && mounted) {
         Navigator.of(context).pop(); // Retour à l'écran précédent
@@ -60,81 +64,97 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       body: Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Logo ou titre
-                  const Icon(
-                    Icons.account_circle,
-                    size: 80,
-                    color: Colors.blue,
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Connexion',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height - 
+                      MediaQuery.of(context).padding.top - 
+                      MediaQuery.of(context).padding.bottom - 
+                      kToolbarHeight - 32, // 32 = padding total
+                ),
+                child: IntrinsicHeight(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 20),
+                        
+                        // Logo ou titre
+                        const Icon(
+                          Icons.account_circle,
+                          size: 80,
+                          color: Colors.blue,
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Connexion',
+                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 32),
 
-                  // Champ email
-                  CustomTextField(
-                    controller: _emailController,
-                    labelText: 'Email',
-                    prefixIcon: Icons.email,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: Validators.validateEmail,
-                  ),
-                  const SizedBox(height: 16),
+                        // Champ email
+                        CustomTextField(
+                          controller: _emailController,
+                          labelText: 'Email',
+                          prefixIcon: Icons.email,
+                          keyboardType: TextInputType.emailAddress,
+                          validator: Validators.validateEmail,
+                        ),
+                        const SizedBox(height: 16),
 
-                  // Champ mot de passe
-                  CustomTextField(
-                    controller: _passwordController,
-                    labelText: 'Mot de passe',
-                    prefixIcon: Icons.lock,
-                    obscureText: true,
-                    validator: Validators.validatePassword,
-                  ),
-                  const SizedBox(height: 24),
+                        // Champ mot de passe
+                        CustomTextField(
+                          controller: _passwordController,
+                          labelText: 'Mot de passe',
+                          prefixIcon: Icons.lock,
+                          obscureText: true,
+                          validator: Validators.validatePassword,
+                        ),
+                        const SizedBox(height: 24),
 
-                  // Message d'erreur
-                  if (authProvider.errorMessage != null)
-                    ErrorDisplayWidget(
-                      message: authProvider.errorMessage!,
-                      onRetry: () => authProvider.clearError(),
-                    ),
-                  const SizedBox(height: 16),
+                        // Message d'erreur
+                        if (authProvider.errorMessage != null)
+                          ErrorDisplayWidget(
+                            message: authProvider.errorMessage!,
+                            onRetry: () => authProvider.clearError(),
+                          ),
+                        const SizedBox(height: 16),
 
-                  // Bouton de connexion
-                  LoginButton(
-                    onPressed: _login,
-                    isLoading: authProvider.isLoading,
-                  ),
-                  const SizedBox(height: 16),
+                        // Bouton de connexion
+                        LoginButton(
+                          onPressed: _login,
+                          isLoading: authProvider.isLoading,
+                        ),
+                        const SizedBox(height: 16),
 
-                  // Lien vers inscription
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text("Vous n'avez pas de compte ?"),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const RegisterScreen(),
+                        // Lien vers inscription
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text("Vous n'avez pas de compte ?"),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const RegisterScreen(),
+                                  ),
+                                );
+                              },
+                              child: const Text('S\'inscrire'),
                             ),
-                          );
-                        },
-                        child: const Text('S\'inscrire'),
-                      ),
-                    ],
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
             ),
           );

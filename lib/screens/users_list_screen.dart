@@ -19,24 +19,33 @@ class _UsersListScreenState extends State<UsersListScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<UsersProvider>(
-        context,
-        listen: false,
-      ).loadUsers(refresh: true);
-    });
     _scrollController.addListener(_onScroll);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Recharger la liste quand on revient d'un autre écran
+    // Charger les utilisateurs quand les dépendances changent
+    _loadUsersIfNeeded();
+  }
+
+  void _loadUsersIfNeeded() {
+    // Utiliser un délai pour s'assurer que le provider est disponible
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final usersProvider = Provider.of<UsersProvider>(context, listen: false);
-      if (usersProvider.users.isEmpty &&
-          usersProvider.state == UsersState.initial) {
-        usersProvider.loadUsers(refresh: true);
+      if (mounted) {
+        try {
+          final usersProvider = Provider.of<UsersProvider>(
+            context,
+            listen: false,
+          );
+          if (usersProvider.users.isEmpty &&
+              usersProvider.state == UsersState.initial) {
+            usersProvider.loadUsers(refresh: true);
+          }
+        } catch (e) {
+          // Le provider n'est pas encore disponible, on réessaiera plus tard
+          print('UsersProvider pas encore disponible: $e');
+        }
       }
     });
   }
@@ -51,12 +60,36 @@ class _UsersListScreenState extends State<UsersListScreen> {
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      Provider.of<UsersProvider>(context, listen: false).loadNextPage();
+      try {
+        Provider.of<UsersProvider>(context, listen: false).loadNextPage();
+      } catch (e) {
+        // Le provider n'est pas disponible, ignorer
+        print('UsersProvider pas disponible dans _onScroll: $e');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Charger les utilisateurs au premier build si nécessaire
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        try {
+          final usersProvider = Provider.of<UsersProvider>(
+            context,
+            listen: false,
+          );
+          if (usersProvider.users.isEmpty &&
+              usersProvider.state == UsersState.initial) {
+            usersProvider.loadUsers(refresh: true);
+          }
+        } catch (e) {
+          // Le provider n'est pas encore disponible
+          print('UsersProvider pas encore disponible dans build: $e');
+        }
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gestion des utilisateurs'),

@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsPhoneNumber, IsBoolean, IsArray, IsNumber } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsBoolean, IsArray, IsNumber, Matches } from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -13,7 +13,9 @@ export class CreateUserDto {
   password: string;
 
   @IsOptional()
-  @IsPhoneNumber()
+  @Matches(/^[\+]?[0-9\s\-\(\)\.]{7,20}$/, {
+    message: 'Format de numéro de téléphone invalide. Utilisez un format international (ex: +33123456789)'
+  })
   phoneNumber?: string;
 
   @IsOptional()

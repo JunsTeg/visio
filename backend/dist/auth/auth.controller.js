@@ -82,8 +82,14 @@ let AuthController = AuthController_1 = class AuthController {
     async getProfile(user) {
         this.logger.log(`Requête de profil reçue pour l'utilisateur ID: ${user.id}`);
         this.logger.debug(`Profil demandé pour: ${user.email} (ID: ${user.id})`);
-        const fullUser = await this.authService.getUserWithRoles(user.id);
-        return fullUser;
+        const userWithRoles = await this.authService.validateUser(user.id);
+        if (!userWithRoles) {
+            this.logger.error(`Utilisateur non trouvé lors de la récupération du profil pour l'ID: ${user.id}`);
+            throw new common_1.UnauthorizedException('Utilisateur non trouvé');
+        }
+        this.logger.debug(`Profil récupéré avec succès pour: ${userWithRoles.email} (ID: ${userWithRoles.id})`);
+        this.logger.debug(`Rôles de l'utilisateur: ${JSON.stringify(userWithRoles.roles?.map(r => r.name))}`);
+        return userWithRoles;
     }
 };
 exports.AuthController = AuthController;

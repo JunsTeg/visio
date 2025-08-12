@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/users_provider.dart';
 import 'widgets/auth_dropdown.dart';
 import 'widgets/loading_widget.dart';
 import 'routes/app_router.dart';
@@ -20,7 +21,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => UsersProvider()),
+      ],
       child: MaterialApp(
         title: AppConstants.appName,
         debugShowCheckedModeBanner: false,

@@ -32,8 +32,16 @@ class AuthDropdown extends StatelessWidget {
     BuildContext context,
     AuthProvider authProvider,
   ) {
+    final avatarUrl = authProvider.user?.avatarUrl;
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.account_circle),
+      icon:
+          (avatarUrl != null && avatarUrl.isNotEmpty)
+              ? CircleAvatar(
+                radius: 12,
+                backgroundImage: NetworkImage(avatarUrl),
+                backgroundColor: Colors.transparent,
+              )
+              : const Icon(Icons.account_circle),
       tooltip: 'Menu utilisateur',
       onSelected:
           (value) =>

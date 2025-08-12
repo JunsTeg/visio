@@ -60,12 +60,12 @@ let UsersService = class UsersService {
     }
     async findAll({ page = 1, limit = 20, search, role, active, online }) {
         const query = this.userRepository.createQueryBuilder('user')
-            .leftJoinAndSelect('user.roles', 'role');
+            .leftJoinAndSelect('user.roles', 'userRoles');
         if (search) {
             query.andWhere('user.fullName ILIKE :search OR user.email ILIKE :search', { search: `%${search}%` });
         }
         if (role) {
-            query.andWhere('role.name = :role', { role });
+            query.andWhere('userRoles.name = :role', { role });
         }
         if (active !== undefined) {
             query.andWhere('user.active = :active', { active: active === 'true' });
@@ -83,7 +83,6 @@ let UsersService = class UsersService {
         const user = await this.userRepository.findOne({
             where: { id },
             relations: ['roles'],
-            select: ['id', 'fullName', 'email', 'phoneNumber', 'isVerified', 'createdAt', 'lastLogin', 'active', 'online'],
         });
         if (!user) {
             throw new common_1.NotFoundException('Utilisateur non trouvé');
@@ -125,7 +124,7 @@ let UsersService = class UsersService {
         if (!user) {
             throw new common_1.NotFoundException('Utilisateur non trouvé');
         }
-        const { email, password, fullName, phoneNumber, isVerified, roleIds } = updateUserDto;
+        const { email, password, fullName, phoneNumber, isVerified, roleIds, avatarUrl } = updateUserDto;
         if (email && email !== user.email) {
             const existingUser = await this.userRepository.findOne({
                 where: { email },
@@ -139,6 +138,8 @@ let UsersService = class UsersService {
             user.fullName = fullName;
         if (phoneNumber !== undefined)
             user.phoneNumber = phoneNumber;
+        if (avatarUrl !== undefined)
+            user.avatarUrl = avatarUrl;
         if (isVerified !== undefined)
             user.isVerified = isVerified;
         if (password) {
@@ -202,7 +203,7 @@ let UsersService = class UsersService {
         if (!user) {
             throw new common_1.NotFoundException('Utilisateur non trouvé');
         }
-        const { email, password, fullName, phoneNumber } = updateProfileDto;
+        const { email, password, fullName, phoneNumber, avatarUrl } = updateProfileDto;
         if (email && email !== user.email) {
             const existingUser = await this.userRepository.findOne({ where: { email } });
             if (existingUser) {
@@ -214,6 +215,8 @@ let UsersService = class UsersService {
             user.fullName = fullName;
         if (phoneNumber !== undefined)
             user.phoneNumber = phoneNumber;
+        if (avatarUrl !== undefined)
+            user.avatarUrl = avatarUrl;
         if (password) {
             const saltRounds = 12;
             user.passwordHash = await bcrypt.hash(password, saltRounds);
