@@ -21,34 +21,12 @@ export class UploadController {
       throw new BadRequestException('Aucun fichier fourni');
     }
 
-    // Configurer le stockage
-    const storageConfig = this.uploadService.getAvatarStorageConfig();
-    const multerStorage = storageConfig.storage;
-
-    // Stocker le fichier
-    return new Promise((resolve, reject) => {
-      multerStorage._handleFile(
-        { file } as any,
-        file,
-        (error: any, info: any) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-
-          // Générer l'URL de l'avatar
-          const avatarUrl = this.uploadService.generateAvatarUrl(file.filename);
-          
-          resolve({
-            filename: file.filename,
-            originalName: file.originalname,
-            size: file.size,
-            mimetype: file.mimetype,
-            avatarUrl,
-          });
-        },
-      );
-    });
+    try {
+      const result = await this.uploadService.storeAvatar(file);
+      return result;
+    } catch (error) {
+      throw new BadRequestException(`Erreur lors de l'upload: ${error.message}`);
+    }
   }
 
   @Post('avatar')
@@ -59,33 +37,11 @@ export class UploadController {
       throw new BadRequestException('Aucun fichier fourni');
     }
 
-    // Configurer le stockage
-    const storageConfig = this.uploadService.getAvatarStorageConfig();
-    const multerStorage = storageConfig.storage;
-
-    // Stocker le fichier
-    return new Promise((resolve, reject) => {
-      multerStorage._handleFile(
-        { file } as any,
-        file,
-        (error: any, info: any) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-
-          // Générer l'URL de l'avatar
-          const avatarUrl = this.uploadService.generateAvatarUrl(file.filename);
-          
-          resolve({
-            filename: file.filename,
-            originalName: file.originalname,
-            size: file.size,
-            mimetype: file.mimetype,
-            avatarUrl,
-          });
-        },
-      );
-    });
+    try {
+      const result = await this.uploadService.storeAvatar(file);
+      return result;
+    } catch (error) {
+      throw new BadRequestException(`Erreur lors de l'upload: ${error.message}`);
+    }
   }
 }

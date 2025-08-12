@@ -26,47 +26,25 @@ let UploadController = class UploadController {
         if (!file) {
             throw new common_1.BadRequestException('Aucun fichier fourni');
         }
-        const storageConfig = this.uploadService.getAvatarStorageConfig();
-        const multerStorage = storageConfig.storage;
-        return new Promise((resolve, reject) => {
-            multerStorage._handleFile({ file }, file, (error, info) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                const avatarUrl = this.uploadService.generateAvatarUrl(file.filename);
-                resolve({
-                    filename: file.filename,
-                    originalName: file.originalname,
-                    size: file.size,
-                    mimetype: file.mimetype,
-                    avatarUrl,
-                });
-            });
-        });
+        try {
+            const result = await this.uploadService.storeAvatar(file);
+            return result;
+        }
+        catch (error) {
+            throw new common_1.BadRequestException(`Erreur lors de l'upload: ${error.message}`);
+        }
     }
     async uploadAvatar(file) {
         if (!file) {
             throw new common_1.BadRequestException('Aucun fichier fourni');
         }
-        const storageConfig = this.uploadService.getAvatarStorageConfig();
-        const multerStorage = storageConfig.storage;
-        return new Promise((resolve, reject) => {
-            multerStorage._handleFile({ file }, file, (error, info) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                const avatarUrl = this.uploadService.generateAvatarUrl(file.filename);
-                resolve({
-                    filename: file.filename,
-                    originalName: file.originalname,
-                    size: file.size,
-                    mimetype: file.mimetype,
-                    avatarUrl,
-                });
-            });
-        });
+        try {
+            const result = await this.uploadService.storeAvatar(file);
+            return result;
+        }
+        catch (error) {
+            throw new common_1.BadRequestException(`Erreur lors de l'upload: ${error.message}`);
+        }
     }
 };
 exports.UploadController = UploadController;

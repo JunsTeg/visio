@@ -26,33 +26,44 @@ export class UploadService {
     }
   }
 
-  getAvatarStorageConfig() {
-    return {
-      storage: diskStorage({
-        destination: (req, file, cb) => {
-          const uploadPath = path.join(process.cwd(), this.uploadsDir, this.avatarsDir);
-          cb(null, uploadPath);
-        },
-        filename: (req, file, cb) => {
-          // Générer un nom unique avec timestamp
-          const timestamp = Date.now();
-          const uniqueId = uuidv4().substring(0, 8);
-          const extension = extname(file.originalname);
-          const filename = `avatar_${timestamp}_${uniqueId}${extension}`;
-          cb(null, filename);
-        },
-      }),
-      fileFilter: (req, file, cb) => {
-        // Vérifier le type de fichier
-        if (!file.mimetype.match(/^image\/(jpeg|jpg|png|gif|webp)$/)) {
-          return cb(new BadRequestException('Seules les images sont autorisées'), false);
-        }
-        cb(null, true);
-      },
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB max
-      },
-    };
+  async storeAvatar(file: Express.Multer.File) {
+    // Vérifier le type de fichier
+    if (!file.mimetype.match(/^image\/(jpeg|jpg|png|gif|webp)$/)) {
+      throw new BadRequestException('Seules les images sont autorisées');
+    }
+
+    // Vérifier la taille
+    if (file.size > 5 * 1024 * 1024) {
+      throw new BadRequestException('Fichier trop volumineux (max 5MB)');
+    }
+
+    // Générer un nom unique
+    const timestamp = Date.now();
+    const uniqueId = uuidv4().substring(0, 8);
+    const extension = extname(file.originalname);
+    const filename = `avatar_${timestamp}_${uniqueId}${extension}`;
+
+    // Chemin de destination
+    const uploadPath = path.join(process.cwd(), this.uploadsDir, this.avatarsDir);
+    const filePath = path.join(uploadPath, filename);
+
+    try {
+      // Écrire le fichier
+      fs.writeFileSync(filePath, file.buffer);
+      
+      // Générer l'URL
+      const avatarUrl = this.generateAvatarUrl(filename);
+      
+      return {
+        filename,
+        originalName: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
+        avatarUrl,
+      };
+    } catch (error) {
+      throw new BadRequestException(`Erreur lors de l'écriture du fichier: ${error.message}`);
+    }
   }
 
   generateAvatarUrl(filename: string): string {
@@ -69,9 +80,5 @@ export class UploadService {
     } catch (error) {
       console.error('Erreur lors de la suppression du fichier avatar:', error);
     }
-  }
-
-  getAvatarFilePath(filename: string): string {
-    return path.join(process.cwd(), this.uploadsDir, this.avatarsDir, filename);
   }
 }

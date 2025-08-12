@@ -44,7 +44,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UploadService = void 0;
 const common_1 = require("@nestjs/common");
-const multer_1 = require("multer");
 const path_1 = require("path");
 const uuid_1 = require("uuid");
 const fs = __importStar(require("fs"));
@@ -65,31 +64,33 @@ let UploadService = class UploadService {
             fs.mkdirSync(avatarsPath, { recursive: true });
         }
     }
-    getAvatarStorageConfig() {
-        return {
-            storage: (0, multer_1.diskStorage)({
-                destination: (req, file, cb) => {
-                    const uploadPath = path.join(process.cwd(), this.uploadsDir, this.avatarsDir);
-                    cb(null, uploadPath);
-                },
-                filename: (req, file, cb) => {
-                    const timestamp = Date.now();
-                    const uniqueId = (0, uuid_1.v4)().substring(0, 8);
-                    const extension = (0, path_1.extname)(file.originalname);
-                    const filename = `avatar_${timestamp}_${uniqueId}${extension}`;
-                    cb(null, filename);
-                },
-            }),
-            fileFilter: (req, file, cb) => {
-                if (!file.mimetype.match(/^image\/(jpeg|jpg|png|gif|webp)$/)) {
-                    return cb(new common_1.BadRequestException('Seules les images sont autorisées'), false);
-                }
-                cb(null, true);
-            },
-            limits: {
-                fileSize: 5 * 1024 * 1024,
-            },
-        };
+    async storeAvatar(file) {
+        if (!file.mimetype.match(/^image\/(jpeg|jpg|png|gif|webp)$/)) {
+            throw new common_1.BadRequestException('Seules les images sont autorisées');
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            throw new common_1.BadRequestException('Fichier trop volumineux (max 5MB)');
+        }
+        const timestamp = Date.now();
+        const uniqueId = (0, uuid_1.v4)().substring(0, 8);
+        const extension = (0, path_1.extname)(file.originalname);
+        const filename = `avatar_${timestamp}_${uniqueId}${extension}`;
+        const uploadPath = path.join(process.cwd(), this.uploadsDir, this.avatarsDir);
+        const filePath = path.join(uploadPath, filename);
+        try {
+            fs.writeFileSync(filePath, file.buffer);
+            const avatarUrl = this.generateAvatarUrl(filename);
+            return {
+                filename,
+                originalName: file.originalname,
+                size: file.size,
+                mimetype: file.mimetype,
+                avatarUrl,
+            };
+        }
+        catch (error) {
+            throw new common_1.BadRequestException(`Erreur lors de l'écriture du fichier: ${error.message}`);
+        }
     }
     generateAvatarUrl(filename) {
         const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
@@ -105,9 +106,6 @@ let UploadService = class UploadService {
         catch (error) {
             console.error('Erreur lors de la suppression du fichier avatar:', error);
         }
-    }
-    getAvatarFilePath(filename) {
-        return path.join(process.cwd(), this.uploadsDir, this.avatarsDir, filename);
     }
 };
 exports.UploadService = UploadService;

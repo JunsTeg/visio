@@ -22,11 +22,11 @@ exports.AppModule = AppModule = __decorate([
         imports: [
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
-                load: [database_config_1.DatabaseConfig],
             }),
             typeorm_1.TypeOrmModule.forRootAsync({
-                useFactory: database_config_1.DatabaseConfig,
-                inject: [config_1.ConfigModule],
+                imports: [config_1.ConfigModule],
+                useFactory: (configService) => (0, database_config_1.getDatabaseConfig)(configService),
+                inject: [config_1.ConfigService],
             }),
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
