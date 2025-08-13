@@ -1,22 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'providers/auth_provider.dart';
+import 'providers/users_provider.dart';
+//import 'widgets/auth_dropdown.dart';
+import 'widgets/loading_widget.dart';
+import 'widgets/custom_navbar.dart';
+import 'widgets/sidebar.dart';
+import 'routes/app_router.dart';
+import 'utils/constants.dart';
+import 'config/app_config.dart';
 
 void main() {
+  // Initialiser la configuration selon l'environnement
+  AppConfig.initialize(Environment.development);
+
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.black),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => UsersProvider()),
+      ],
+      child: MaterialApp(
+        title: AppConstants.appName,
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.black),
+          useMaterial3: true,
+        ),
+        initialRoute: AppRouter.initialRoute,
+        onGenerateRoute: AppRouter.generateRoute,
+        home: const MyHomePage(title: 'VISIO'),
       ),
-      home: MyHomePage(title: 'VISIO'),
     );
   }
 }
@@ -31,24 +52,141 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  @override
-  void initState() {
-    super.initState();
+  bool _isSidebarOpen = false;
+
+  void _toggleSidebar() {
+    setState(() {
+      _isSidebarOpen = !_isSidebarOpen;
+    });
   }
 
-  @override
-  void dispose() {
-    super.dispose();
+  void _closeSidebar() {
+    setState(() {
+      _isSidebarOpen = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+      body: Stack(
+        children: [
+          // Contenu principal
+          Column(
+            children: [
+              // Navbar personnalisée
+              CustomNavbar(
+                onMenuPressed: _toggleSidebar,
+                isSidebarOpen: _isSidebarOpen,
+              ),
+              // Corps de l'application
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    top: 16.0,
+                  ), // Espacement depuis la navbar
+                  child: Consumer<AuthProvider>(
+                    builder: (context, authProvider, child) {
+                      if (authProvider.state == AuthState.initial ||
+                          authProvider.isLoading) {
+                        return const FullScreenLoading(
+                          message: 'Initialisation...',
+                        );
+                      }
+
+                      if (authProvider.isAuthenticated) {
+                        return _buildAuthenticatedContent(authProvider);
+                      } else {
+                        return _buildUnauthenticatedContent();
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // Sidebar avec overlay animé
+          if (_isSidebarOpen)
+            AnimatedOpacity(
+              opacity: 1.0,
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeInOutCubic,
+              child: GestureDetector(
+                onTap: _closeSidebar,
+                child: Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+            ),
+          // Sidebar
+          Sidebar(isOpen: _isSidebarOpen, onClose: _closeSidebar),
+        ],
       ),
-      body: const Center(child: Text('Bienvenue')),
+    );
+  }
+
+  Widget _buildAuthenticatedContent(AuthProvider authProvider) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.check_circle, color: Colors.green, size: 64),
+          const SizedBox(height: 16),
+          Text(
+            'Bienvenue, ${authProvider.user?.fullName ?? 'Utilisateur'} !',
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            authProvider.user?.email ?? '',
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Vous êtes maintenant connecté à Visio',
+            style: TextStyle(fontSize: 18),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnauthenticatedContent() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.account_circle_outlined,
+            size: 64,
+            color: Colors.grey,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Bienvenue sur Visio',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Connectez-vous pour accéder à toutes les fonctionnalités',
+            style: TextStyle(fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton.icon(
+            onPressed: () {
+              // Le dropdown gère la navigation
+            },
+            icon: const Icon(Icons.login),
+            label: const Text('Se connecter'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

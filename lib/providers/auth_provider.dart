@@ -1,0 +1,335 @@
+import 'package:flutter/foundation.dart';
+//import '../models/auth_response.dart';
+import '../models/login_request.dart';
+import '../models/register_request.dart';
+import '../models/user.dart';
+import '../services/auth_service.dart';
+
+enum AuthState { initial, loading, authenticated, unauthenticated, error }
+
+class AuthProvider with ChangeNotifier {
+  final AuthService _authService = AuthService();
+
+  AuthState _state = AuthState.initial;
+  User? _user;
+  String? _errorMessage;
+  bool _isLoading = false;
+
+  // Getters
+  AuthState get state => _state;
+  User? get user => _user;
+  String? get errorMessage => _errorMessage;
+  bool get isLoading => _isLoading;
+  bool get isAuthenticated =>
+      _state == AuthState.authenticated && _user != null;
+
+  AuthProvider() {
+    _initializeAuth();
+  }
+
+  // Initialiser l'état d'authentification au démarrage
+  Future<void> _initializeAuth() async {
+    try {
+      _setLoading(true);
+      final isAuth = await _authService.isAuthenticated();
+
+      if (isAuth) {
+        final user = await _authService.getProfile();
+
+        // Vérifier si le compte est désactivé
+        if (user.active == false) {
+          _setError('Compte désactivé. Vous avez été déconnecté.');
+          _setUnauthenticated();
+          return;
+        }
+
+        _setAuthenticated(user);
+      } else {
+        _setUnauthenticated();
+      }
+    } catch (e) {
+      final errorMessage = e.toString();
+
+      // Déconnexion automatique pour certaines erreurs
+      if (errorMessage.contains('Compte désactivé') ||
+          errorMessage.contains('401') ||
+          errorMessage.contains('403') ||
+          errorMessage.contains('Unauthorized') ||
+          errorMessage.contains('Forbidden')) {
+        _setError('Accès refusé. Vous avez été déconnecté.');
+        _setUnauthenticated();
+        return;
+      }
+
+      _setError('Erreur lors de l\'initialisation: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Connexion
+  Future<bool> login(LoginRequest request) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final authResponse = await _authService.login(request);
+
+      // Vérifier si le compte est désactivé
+      if (authResponse.user.active == false) {
+        _setError('Compte désactivé. Veuillez contacter le support.');
+        return false;
+      }
+
+      // S'assurer que les rôles sont chargés
+      if (authResponse.user.roles == null || authResponse.user.roles!.isEmpty) {
+        // Recharger le profil pour obtenir les rôles complets
+        try {
+          final updatedUser = await _authService.getProfile();
+          _setAuthenticated(updatedUser);
+        } catch (profileError) {
+          // Si le rechargement échoue, utiliser l'utilisateur de la réponse de connexion
+          _setAuthenticated(authResponse.user);
+        }
+      } else {
+        _setAuthenticated(authResponse.user);
+      }
+
+      return true;
+    } catch (e) {
+      final errorMessage = e.toString();
+
+      // Déconnexion automatique pour certaines erreurs
+      if (errorMessage.contains('Compte désactivé') ||
+          errorMessage.contains('401') ||
+          errorMessage.contains('403') ||
+          errorMessage.contains('Unauthorized') ||
+          errorMessage.contains('Forbidden')) {
+        _setError('Accès refusé. Veuillez vérifier vos identifiants.');
+        _setUnauthenticated();
+        return false;
+      }
+
+      _setError('Erreur de connexion: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Inscription
+  Future<bool> register(RegisterRequest request) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final response = await _authService.register(request);
+      _setAuthenticated(response.user);
+      return true;
+    } catch (e) {
+      _setError('Erreur d\'inscription: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Déconnexion
+  Future<void> logout() async {
+    try {
+      _setLoading(true);
+      await _authService.logout();
+      _setUnauthenticated();
+    } catch (e) {
+      _setError('Erreur de déconnexion: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Rafraîchissement du token
+  Future<bool> refreshToken() async {
+    try {
+      final response = await _authService.refreshToken();
+      _setAuthenticated(response.user);
+      return true;
+    } catch (e) {
+      _setError('Erreur de rafraîchissement: $e');
+      _setUnauthenticated();
+      return false;
+    }
+  }
+
+  // Mettre à jour le profil utilisateur
+  Future<void> updateProfile() async {
+    try {
+      if (_user != null) {
+        final updatedUser = await _authService.getProfile();
+
+        // Vérifier si le compte est désactivé
+        if (updatedUser.active == false) {
+          _setError('Compte désactivé. Vous avez été déconnecté.');
+          _setUnauthenticated();
+          return;
+        }
+
+        _setAuthenticated(updatedUser);
+      }
+    } catch (e) {
+      final errorMessage = e.toString();
+
+      // Déconnexion automatique pour certaines erreurs
+      if (errorMessage.contains('Compte désactivé') ||
+          errorMessage.contains('401') ||
+          errorMessage.contains('403') ||
+          errorMessage.contains('Unauthorized') ||
+          errorMessage.contains('Forbidden')) {
+        _setError('Accès refusé. Vous avez été déconnecté.');
+        _setUnauthenticated();
+        return;
+      }
+
+      _setError('Erreur de mise à jour du profil: $e');
+    }
+  }
+
+  // Mise à jour du profil utilisateur (PUT /users/me)
+  Future<bool> updateProfileMe(Map<String, dynamic> data) async {
+    try {
+      _setLoading(true);
+      _clearError();
+      final updatedUser = await _authService.updateProfileMe(data);
+
+      // Vérifier si le compte est désactivé
+      if (updatedUser.active == false) {
+        _setError('Compte désactivé. Vous avez été déconnecté.');
+        _setUnauthenticated();
+        return false;
+      }
+
+      _setAuthenticated(updatedUser);
+      return true;
+    } catch (e) {
+      final errorMessage = e.toString();
+
+      // Déconnexion automatique pour certaines erreurs
+      if (errorMessage.contains('Compte désactivé') ||
+          errorMessage.contains('401') ||
+          errorMessage.contains('403') ||
+          errorMessage.contains('Unauthorized') ||
+          errorMessage.contains('Forbidden')) {
+        _setError('Accès refusé. Vous avez été déconnecté.');
+        _setUnauthenticated();
+        return false;
+      }
+
+      _setError('Erreur de mise à jour du profil: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Méthode pour forcer le rechargement du profil et des rôles
+  Future<void> refreshProfile() async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final updatedUser = await _authService.getProfile();
+
+      // Vérifier si le compte est désactivé
+      if (updatedUser.active == false) {
+        _setError('Compte désactivé. Vous avez été déconnecté.');
+        _setUnauthenticated();
+        return;
+      }
+
+      _setAuthenticated(updatedUser);
+    } catch (e) {
+      final errorMessage = e.toString();
+
+      // Déconnexion automatique pour certaines erreurs
+      if (errorMessage.contains('Compte désactivé') ||
+          errorMessage.contains('401') ||
+          errorMessage.contains('403') ||
+          errorMessage.contains('Unauthorized') ||
+          errorMessage.contains('Forbidden')) {
+        _setError('Accès refusé. Vous avez été déconnecté.');
+        _setUnauthenticated();
+        return;
+      }
+
+      _setError('Erreur de mise à jour du profil: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> deleteAvatar() async {
+    try {
+      _setLoading(true);
+      _clearError();
+      final updatedUser = await _authService.deleteMyAvatar();
+      _setAuthenticated(updatedUser);
+      return true;
+    } catch (e) {
+      _setError('Erreur lors de la suppression de la photo: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Méthodes privées pour gérer l'état
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    if (loading) {
+      _state = AuthState.loading;
+    }
+    notifyListeners();
+  }
+
+  void _setAuthenticated(User user) {
+    _user = user;
+    _state = AuthState.authenticated;
+    _clearError();
+    notifyListeners();
+  }
+
+  void _setUnauthenticated() {
+    _user = null;
+    _state = AuthState.unauthenticated;
+    _clearError();
+    notifyListeners();
+  }
+
+  void _setError(String message) {
+    _errorMessage = message;
+    _state = AuthState.error;
+    notifyListeners();
+  }
+
+  void _clearError() {
+    _errorMessage = null;
+    if (_state == AuthState.error) {
+      _state =
+          _user != null ? AuthState.authenticated : AuthState.unauthenticated;
+    }
+  }
+
+  // Effacer les erreurs manuellement
+  void clearError() {
+    _clearError();
+    notifyListeners();
+  }
+
+  // Obtenir le token d'accès
+  Future<String?> getAccessToken() async {
+    try {
+      return await _authService.getAccessToken();
+    } catch (e) {
+      return null;
+    }
+  }
+}
