@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User, Role } from '../entities';
 import { CreateUserDto, UpdateUserDto, UpdateProfileDto } from './dto';
+import { UploadService } from '../upload/upload.service';
 
 @Injectable()
 export class UsersService {
@@ -12,6 +13,7 @@ export class UsersService {
     private userRepository: Repository<User>,
     @InjectRepository(Role)
     private roleRepository: Repository<Role>,
+    private readonly uploadService: UploadService,
   ) {}
 
   async findAll({ page = 1, limit = 20, search, role, active, online }: any): Promise<{ data: User[]; total: number; page: number; limit: number }> {
@@ -215,6 +217,23 @@ export class UsersService {
       const saltRounds = 12;
       user.passwordHash = await bcrypt.hash(password, saltRounds);
     }
+    await this.userRepository.save(user);
+    return this.findOne(userId);
+  }
+
+  async deleteMyAvatar(userId: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+    // Essayer de supprimer l'ancien fichier si présent
+    if (user.avatarUrl) {
+      const filename = user.avatarUrl.split('/').pop();
+      if (filename) {
+        await this.uploadService.deleteAvatarFile(filename);
+      }
+    }
+    user.avatarUrl = null as unknown as string; // TypeORM: champ nullable
     await this.userRepository.save(user);
     return this.findOne(userId);
   }

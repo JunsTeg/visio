@@ -235,6 +235,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               if (_isEditing) ...[
+                const SizedBox(height: 12),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final ok = await authProvider.deleteAvatar();
+                      if (ok) {
+                        setState(() {
+                          _selectedImageFile = null;
+                          _avatarUrl = null;
+                        });
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Photo supprimée')),
+                          );
+                        }
+                      } else {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                authProvider.errorMessage ??
+                                    'Erreur lors de la suppression',
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Supprimer la photo'),
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  ),
+                ),
+              ],
+              if (_isEditing) ...[
                 const SizedBox(height: 8),
                 Text(
                   'Appuyez pour modifier la photo',

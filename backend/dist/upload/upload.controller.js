@@ -22,24 +22,37 @@ let UploadController = class UploadController {
     constructor(uploadService) {
         this.uploadService = uploadService;
     }
-    async uploadAvatarPublic(file) {
+    getBaseUrl(req) {
+        try {
+            const proto = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+            const host = req.headers['host'];
+            if (host) {
+                return `${proto}://${host}`;
+            }
+        }
+        catch { }
+        return undefined;
+    }
+    async uploadAvatarPublic(file, req) {
         if (!file) {
             throw new common_1.BadRequestException('Aucun fichier fourni');
         }
         try {
-            const result = await this.uploadService.storeAvatar(file);
+            const baseUrl = this.getBaseUrl(req);
+            const result = await this.uploadService.storeAvatar(file, baseUrl);
             return result;
         }
         catch (error) {
             throw new common_1.BadRequestException(`Erreur lors de l'upload: ${error.message}`);
         }
     }
-    async uploadAvatar(file) {
+    async uploadAvatar(file, req) {
         if (!file) {
             throw new common_1.BadRequestException('Aucun fichier fourni');
         }
         try {
-            const result = await this.uploadService.storeAvatar(file);
+            const baseUrl = this.getBaseUrl(req);
+            const result = await this.uploadService.storeAvatar(file, baseUrl);
             return result;
         }
         catch (error) {
@@ -52,8 +65,9 @@ __decorate([
     (0, common_1.Post)('avatar/public'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('avatar')),
     __param(0, (0, common_1.UploadedFile)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], UploadController.prototype, "uploadAvatarPublic", null);
 __decorate([
@@ -61,8 +75,9 @@ __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('avatar')),
     __param(0, (0, common_1.UploadedFile)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], UploadController.prototype, "uploadAvatar", null);
 exports.UploadController = UploadController = __decorate([

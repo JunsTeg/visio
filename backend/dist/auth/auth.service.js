@@ -239,10 +239,10 @@ let AuthService = AuthService_1 = class AuthService {
         this.logger.debug(`Génération de tokens pour l'utilisateur: ${user.email} (ID: ${user.id})`);
         const payload = { sub: user.id, email: user.email };
         this.logger.debug(`Payload JWT créé: ${JSON.stringify(payload)}`);
-        this.logger.debug('Génération du access token (15 minutes)');
+        this.logger.debug('Génération du access token (7 jours)');
         const accessToken = this.jwtService.sign(payload, {
             secret: process.env.JWT_SECRET || 'access-secret',
-            expiresIn: '15m',
+            expiresIn: '7d',
         });
         this.logger.debug('Génération du refresh token (7 jours)');
         const refreshToken = this.jwtService.sign(payload, {

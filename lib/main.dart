@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/users_provider.dart';
-import 'widgets/auth_dropdown.dart';
+//import 'widgets/auth_dropdown.dart';
 import 'widgets/loading_widget.dart';
+import 'widgets/custom_navbar.dart';
+import 'widgets/sidebar.dart';
 import 'routes/app_router.dart';
 import 'utils/constants.dart';
 import 'config/app_config.dart';
@@ -50,27 +52,76 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  bool _isSidebarOpen = false;
+
+  void _toggleSidebar() {
+    setState(() {
+      _isSidebarOpen = !_isSidebarOpen;
+    });
+  }
+
+  void _closeSidebar() {
+    setState(() {
+      _isSidebarOpen = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-        actions: [const AuthDropdown()],
-      ),
-      body: Consumer<AuthProvider>(
-        builder: (context, authProvider, child) {
-          if (authProvider.state == AuthState.initial ||
-              authProvider.isLoading) {
-            return const FullScreenLoading(message: 'Initialisation...');
-          }
+      body: Stack(
+        children: [
+          // Contenu principal
+          Column(
+            children: [
+              // Navbar personnalisée
+              CustomNavbar(
+                onMenuPressed: _toggleSidebar,
+                isSidebarOpen: _isSidebarOpen,
+              ),
+              // Corps de l'application
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    top: 16.0,
+                  ), // Espacement depuis la navbar
+                  child: Consumer<AuthProvider>(
+                    builder: (context, authProvider, child) {
+                      if (authProvider.state == AuthState.initial ||
+                          authProvider.isLoading) {
+                        return const FullScreenLoading(
+                          message: 'Initialisation...',
+                        );
+                      }
 
-          if (authProvider.isAuthenticated) {
-            return _buildAuthenticatedContent(authProvider);
-          } else {
-            return _buildUnauthenticatedContent();
-          }
-        },
+                      if (authProvider.isAuthenticated) {
+                        return _buildAuthenticatedContent(authProvider);
+                      } else {
+                        return _buildUnauthenticatedContent();
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // Sidebar avec overlay animé
+          if (_isSidebarOpen)
+            AnimatedOpacity(
+              opacity: 1.0,
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeInOutCubic,
+              child: GestureDetector(
+                onTap: _closeSidebar,
+                child: Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+            ),
+          // Sidebar
+          Sidebar(isOpen: _isSidebarOpen, onClose: _closeSidebar),
+        ],
       ),
     );
   }

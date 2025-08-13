@@ -38,6 +38,9 @@ let UsersController = class UsersController {
     updateMe(user, updateProfileDto) {
         return this.usersService.updateMe(user.id, updateProfileDto);
     }
+    async deleteMyAvatar(user) {
+        return this.usersService.deleteMyAvatar(user.id);
+    }
     create(createUserDto) {
         return this.usersService.create(createUserDto);
     }
@@ -95,6 +98,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, update_user_dto_1.UpdateProfileDto]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "updateMe", null);
+__decorate([
+    (0, common_1.Delete)('me/avatar'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "deleteMyAvatar", null);
 __decorate([
     (0, common_1.Post)(),
     (0, roles_decorator_1.Roles)('admin'),

@@ -231,6 +231,25 @@ class AuthService {
     });
   }
 
+  // Supprimer l'avatar (DELETE /users/me/avatar)
+  Future<User> deleteMyAvatar() async {
+    if (!await NetworkService.isConnected()) {
+      throw Exception(AppConstants.networkErrorMessage);
+    }
+    return NetworkService.retryWithBackoff(() async {
+      final response = await _apiClient
+          .delete('/users/me/avatar')
+          .timeout(AppConstants.connectionTimeout);
+      if (response.statusCode == 200) {
+        final user = User.fromJson(jsonDecode(response.body));
+        await CacheService.cacheUser(user.toJson());
+        return user;
+      }
+      final errorMessage = NetworkService.handleHttpError(response);
+      throw Exception(errorMessage);
+    });
+  }
+
   // Vérifier si l'utilisateur est connecté
   Future<bool> isAuthenticated() async {
     final token = await _apiClient.getAccessToken();

@@ -240,17 +240,26 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                     children: [
                       const Icon(Icons.security, size: 20),
                       const SizedBox(width: 8),
-                      Text(role.name, style: const TextStyle(fontSize: 16)),
-                      if (role.description != null) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          '(${role.description})',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
+                      Expanded(
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: role.name,
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              if (role.description != null)
+                                TextSpan(
+                                  text: ' (${role.description})',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),

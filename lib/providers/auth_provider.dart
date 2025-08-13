@@ -266,6 +266,21 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> deleteAvatar() async {
+    try {
+      _setLoading(true);
+      _clearError();
+      final updatedUser = await _authService.deleteMyAvatar();
+      _setAuthenticated(updatedUser);
+      return true;
+    } catch (e) {
+      _setError('Erreur lors de la suppression de la photo: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Méthodes privées pour gérer l'état
   void _setLoading(bool loading) {
     _isLoading = loading;

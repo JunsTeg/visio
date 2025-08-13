@@ -17,8 +17,14 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     if (!user) {
+      const req = context?.switchToHttp?.().getRequest?.();
+      const method = req?.method;
+      const url = req?.originalUrl || req?.url;
       this.logger.warn('JwtAuthGuard - Aucun utilisateur trouvé dans la requête');
       this.logger.debug(`JwtAuthGuard - Info: ${info?.message || 'Aucune info'}`);
+      if (method && url) {
+        this.logger.debug(`JwtAuthGuard - Requête: ${method} ${url}`);
+      }
     } else {
       this.logger.debug(`JwtAuthGuard - Utilisateur authentifié: ${user.email} (ID: ${user.id})`);
     }

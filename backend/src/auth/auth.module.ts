@@ -15,7 +15,7 @@ import { User, AuthToken, Role } from '../entities';
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'access-secret',
-      signOptions: { expiresIn: '15m' },
+      signOptions: { expiresIn: '7d' },
     }),
   ],
   controllers: [AuthController],

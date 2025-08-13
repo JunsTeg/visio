@@ -31,7 +31,7 @@ export class UpdateUserDto {
   roleIds?: number[];
 
   @IsOptional()
-  @IsUrl({}, { message: 'avatarUrl doit être une URL valide' })
+  @IsUrl({ require_tld: false, require_protocol: true }, { message: 'avatarUrl doit être une URL valide (inclure http/https)' })
   avatarUrl?: string;
 }
 
@@ -57,6 +57,6 @@ export class UpdateProfileDto {
   phoneNumber?: string;
 
   @IsOptional()
-  @IsUrl({}, { message: 'avatarUrl doit être une URL valide' })
+  @IsUrl({ require_tld: false, require_protocol: true }, { message: 'avatarUrl doit être une URL valide (inclure http/https)' })
   avatarUrl?: string;
 } 

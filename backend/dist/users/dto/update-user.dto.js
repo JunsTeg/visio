@@ -58,7 +58,7 @@ __decorate([
 ], UpdateUserDto.prototype, "roleIds", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsUrl)({}, { message: 'avatarUrl doit être une URL valide' }),
+    (0, class_validator_1.IsUrl)({ require_tld: false, require_protocol: true }, { message: 'avatarUrl doit être une URL valide (inclure http/https)' }),
     __metadata("design:type", String)
 ], UpdateUserDto.prototype, "avatarUrl", void 0);
 class UpdateProfileDto {
@@ -95,7 +95,7 @@ __decorate([
 ], UpdateProfileDto.prototype, "phoneNumber", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsUrl)({}, { message: 'avatarUrl doit être une URL valide' }),
+    (0, class_validator_1.IsUrl)({ require_tld: false, require_protocol: true }, { message: 'avatarUrl doit être une URL valide (inclure http/https)' }),
     __metadata("design:type", String)
 ], UpdateProfileDto.prototype, "avatarUrl", void 0);
 //# sourceMappingURL=update-user.dto.js.map

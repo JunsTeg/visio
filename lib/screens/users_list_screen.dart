@@ -92,7 +92,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestion des utilisateurs'),
+        title: const Text('Utilisateurs'),
         actions: [
           IconButton(
             icon: const Icon(Icons.security),

@@ -13,6 +13,7 @@ export declare class UsersController {
     getRoles(): Promise<import("../entities").Role[]>;
     getMe(user: any): Promise<import("../entities").User>;
     updateMe(user: any, updateProfileDto: UpdateProfileDto): Promise<import("../entities").User>;
+    deleteMyAvatar(user: any): Promise<import("../entities").User>;
     create(createUserDto: CreateUserDto): Promise<import("../entities").User>;
     findOne(id: string): Promise<import("../entities").User>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<import("../entities").User>;

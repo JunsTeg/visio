@@ -266,11 +266,11 @@ export class AuthService {
     const payload = { sub: user.id, email: user.email };
     this.logger.debug(`Payload JWT créé: ${JSON.stringify(payload)}`);
 
-    // Générer access token (15 minutes)
-    this.logger.debug('Génération du access token (15 minutes)');
+    // Générer access token (7 jours)
+    this.logger.debug('Génération du access token (7 jours)');
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_SECRET || 'access-secret',
-      expiresIn: '15m',
+      expiresIn: '7d',
     });
 
     // Générer refresh token (7 jours)

@@ -43,6 +43,12 @@ export class UsersController {
     return this.usersService.updateMe(user.id, updateProfileDto);
   }
 
+  @Delete('me/avatar')
+  @UseGuards(JwtAuthGuard)
+  async deleteMyAvatar(@CurrentUser() user) {
+    return this.usersService.deleteMyAvatar(user.id);
+  }
+
   @Post()
   @Roles('admin')
   create(@Body() createUserDto: CreateUserDto) {

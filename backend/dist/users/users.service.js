@@ -51,12 +51,15 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const bcrypt = __importStar(require("bcryptjs"));
 const entities_1 = require("../entities");
+const upload_service_1 = require("../upload/upload.service");
 let UsersService = class UsersService {
     userRepository;
     roleRepository;
-    constructor(userRepository, roleRepository) {
+    uploadService;
+    constructor(userRepository, roleRepository, uploadService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.uploadService = uploadService;
     }
     async findAll({ page = 1, limit = 20, search, role, active, online }) {
         const query = this.userRepository.createQueryBuilder('user')
@@ -224,6 +227,21 @@ let UsersService = class UsersService {
         await this.userRepository.save(user);
         return this.findOne(userId);
     }
+    async deleteMyAvatar(userId) {
+        const user = await this.userRepository.findOne({ where: { id: userId } });
+        if (!user) {
+            throw new common_1.NotFoundException('Utilisateur non trouvé');
+        }
+        if (user.avatarUrl) {
+            const filename = user.avatarUrl.split('/').pop();
+            if (filename) {
+                await this.uploadService.deleteAvatarFile(filename);
+            }
+        }
+        user.avatarUrl = null;
+        await this.userRepository.save(user);
+        return this.findOne(userId);
+    }
     async getRoles() {
         return this.roleRepository.find();
     }
@@ -234,6 +252,7 @@ exports.UsersService = UsersService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(entities_1.User)),
     __param(1, (0, typeorm_1.InjectRepository)(entities_1.Role)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        upload_service_1.UploadService])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map
